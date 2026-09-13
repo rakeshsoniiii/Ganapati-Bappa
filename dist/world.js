@@ -1,4 +1,4 @@
-import { storyBeats } from './timeline.js?v=story16';
+﻿import { storyBeats } from './timeline.js?v=story16';
 import * as T from './vendor/three.module.js';
 import { Water } from './vendor/Water.js';
 import { STLLoader } from './vendor/STLLoader.js';
@@ -68,83 +68,113 @@ export function createWorld(canvas) {
 
   // ─── PBR LUXURY MATERIALS (MUSEUM SCULPTURE GRADE) ───
   const gold = new T.MeshStandardMaterial({
-    color: 0xb58434, metalness: 0.92, roughness: 0.24
+    color: 0xffc94a, metalness: 0.95, roughness: 0.18,
+    emissive: 0x8a5a00, emissiveIntensity: 0.12
   });
   const paleGold = new T.MeshStandardMaterial({
-    color: 0xa18b69, metalness: 0.48, roughness: 0.58
+    color: 0xe8c87a, metalness: 0.62, roughness: 0.42,
+    emissive: 0x5a3a00, emissiveIntensity: 0.08
   });
   const darkGold = new T.MeshStandardMaterial({
-    color: 0x6e4e1a, metalness: 0.82, roughness: 0.32
+    color: 0xb87a1a, metalness: 0.88, roughness: 0.28,
+    emissive: 0x3a1a00, emissiveIntensity: 0.06
   });
   const antiqueBronze = new T.MeshStandardMaterial({
-    color: 0x7a5632, metalness: 0.85, roughness: 0.36
+    color: 0xcd8d4a, metalness: 0.88, roughness: 0.30,
+    emissive: 0x3a1800, emissiveIntensity: 0.05
   });
   const ivory = new T.MeshStandardMaterial({
-    color: 0xf3e8d6, metalness: 0.08, roughness: 0.38
+    color: 0xfff4e0, metalness: 0.06, roughness: 0.30,
+    emissive: 0x3a2a00, emissiveIntensity: 0.04
   });
   const modakCream = new T.MeshStandardMaterial({
-    color: 0xfcf5e8, metalness: 0.08, roughness: 0.28
+    color: 0xfffbe8, metalness: 0.06, roughness: 0.22,
+    emissive: 0x1a1000, emissiveIntensity: 0.04
   });
+  // Deep lapis lazuli for temple/pedestal dark tiers (replaces near-black obsidian)
   const obsidian = new T.MeshStandardMaterial({
-    color: 0x252b2c, metalness: 0.02, roughness: 0.87
+    color: 0x1a1f5c, metalness: 0.30, roughness: 0.72,
+    emissive: 0x0a0a2a, emissiveIntensity: 0.18
   });
+  // Warm sandstone for temple columns (replaces cold dark grey)
   const stoneGray = new T.MeshStandardMaterial({
-    color: 0x1d2729, metalness: 0.28, roughness: 0.65
+    color: 0xc4906a, metalness: 0.18, roughness: 0.72,
+    emissive: 0x1a0800, emissiveIntensity: 0.04
   });
   const crimson = new T.MeshStandardMaterial({
-    color: 0x90160a, metalness: 0.25, roughness: 0.45
+    color: 0xd42020, metalness: 0.30, roughness: 0.38,
+    emissive: 0x5a0000, emissiveIntensity: 0.15
   });
   const rubyGem = new T.MeshStandardMaterial({
-    color: 0xd91624, metalness: 0.4, roughness: 0.15
+    color: 0xff1e30, metalness: 0.55, roughness: 0.08,
+    emissive: 0x8a0010, emissiveIntensity: 0.25
   });
-  const glow = new T.MeshBasicMaterial({ color: 0xf2c875 });
-  const fireGlow = new T.MeshBasicMaterial({ color: 0xff4010 });
-  const warmGlow = new T.MeshBasicMaterial({ color: 0xffab3d });
+  const glow = new T.MeshBasicMaterial({ color: 0xffe566 });
+  const fireGlow = new T.MeshBasicMaterial({ color: 0xff5500 });
+  const warmGlow = new T.MeshBasicMaterial({ color: 0xffcc44 });
 
   // Sacred Deity PBR Materials (Museum Bronze & Rock-Cut Stone Patina)
   const shivaSkin = new T.MeshStandardMaterial({
-    color: 0x6c808a, metalness: 0.0, roughness: 0.76, side: T.DoubleSide
+    color: 0x3a78c4, metalness: 0.0, roughness: 0.62,   // cobalt Neelkantha (procedural parts)
+    emissive: 0x001840, emissiveIntensity: 0.18, side: T.DoubleSide
   });
   const parvatiSkin = new T.MeshStandardMaterial({
-    color: 0x9b7155, metalness: 0.0, roughness: 0.78, side: T.DoubleSide
+    color: 0xe8724a, metalness: 0.0, roughness: 0.60,   // saffron-rose Chola bronze
+    emissive: 0x5a1400, emissiveIntensity: 0.14, side: T.DoubleSide
   });
   const sareeCrimson = new T.MeshStandardMaterial({
-    color: 0x520a10, metalness: 0.0, roughness: 0.92, side: T.DoubleSide
+    color: 0xcc1a1a, metalness: 0.0, roughness: 0.72,   // vivid vermillion saree
+    emissive: 0x5a0000, emissiveIntensity: 0.12, side: T.DoubleSide
   });
   const sareeGoldBorder = new T.MeshStandardMaterial({
-    color: 0xd4a538, metalness: 0.94, roughness: 0.20, side: T.DoubleSide
+    color: 0xffd040, metalness: 0.96, roughness: 0.14,  // bright temple gold border
+    emissive: 0x6a3000, emissiveIntensity: 0.10, side: T.DoubleSide
   });
   const shaktiArmor = new T.MeshStandardMaterial({
-    color: 0x643e35, metalness: 0.0, roughness: 0.8, side: T.DoubleSide
+    color: 0xc42020, metalness: 0.22, roughness: 0.55,  // vivid crimson-scarlet Shakti armor
+    emissive: 0x6a0000, emissiveIntensity: 0.20, side: T.DoubleSide
   });
   const tigerSkin = new T.MeshStandardMaterial({
-    color: 0x8a6842, metalness: 0.0, roughness: 0.93, side: T.DoubleSide
+    color: 0xd4823a, metalness: 0.0, roughness: 0.85,   // vivid tawny tiger
+    emissive: 0x2a0800, emissiveIntensity: 0.06, side: T.DoubleSide
   });
-  const trinetraGlow = new T.MeshBasicMaterial({ color: 0x5ce6ff });
+  const trinetraGlow = new T.MeshBasicMaterial({ color: 0x00e8ff });  // vivid cyan third eye
   const chandraSilver = new T.MeshStandardMaterial({
-    color: 0xf4f8fc, metalness: 0.96, roughness: 0.10
+    color: 0xe8f4ff, metalness: 0.98, roughness: 0.06,  // bright silver-white crescent moon
+    emissive: 0x0a1a2a, emissiveIntensity: 0.08
   });
   const vasukiGreen = new T.MeshStandardMaterial({
-    color: 0x14281c, metalness: 0.70, roughness: 0.32
+    color: 0x1a5c28, metalness: 0.72, roughness: 0.28,  // vivid emerald serpent
+    emissive: 0x002a08, emissiveIntensity: 0.12
   });
 
   // Sacred Elephant PBR materials
   const elephantSkin = new T.MeshStandardMaterial({
-    color: 0x5a6366, metalness: 0.12, roughness: 0.78
+    color: 0x7a8fa0,            // warm divine grey — sacred elephant with celestial blue tint
+    metalness: 0.18,
+    roughness: 0.68,
+    emissive: 0x0a1020,
+    emissiveIntensity: 0.10
   });
   const elephantIvory = new T.MeshStandardMaterial({
-    color: 0xede4ce, metalness: 0.18, roughness: 0.35
+    color: 0xfff0c8,            // warm ivory-cream tusks
+    metalness: 0.22,
+    roughness: 0.28,
+    emissive: 0x1a1000,
+    emissiveIntensity: 0.05
   });
 
   // Himalayan Kailash terrain materials
   const snowCap = new T.MeshStandardMaterial({
-    color: 0xdde9f0, metalness: 0.05, roughness: 0.75
+    color: 0xeef6ff, metalness: 0.08, roughness: 0.65,  // bright glacial white-blue
+    emissive: 0x0a1828, emissiveIntensity: 0.06
   });
   const rockFace = new T.MeshStandardMaterial({
-    color: 0x2e383b, metalness: 0.2, roughness: 0.85
+    color: 0x4a3a2e, metalness: 0.24, roughness: 0.88,  // warm brown-slate rock
+    emissive: 0x0a0500, emissiveIntensity: 0.03
   });
   const treeBark = new T.MeshStandardMaterial({
-    color: 0x16120e, metalness: 0.08, roughness: 0.92
+    color: 0x2a1a0e, metalness: 0.06, roughness: 0.94   // deep warm bark brown
   });
 
   const hqSphere = new T.SphereGeometry(1, 48, 36);
@@ -276,7 +306,7 @@ export function createWorld(canvas) {
     return g;
   }
 
-  new STLLoader().load('./assets/ganesha.stl', geometry => {
+  new STLLoader().load('./assets/Ganesh Ji.stl', geometry => {
     geometry.deleteAttribute('normal');
     geometry = mergeVertices(geometry, 0.00001);
     geometry.computeVertexNormals();
@@ -288,8 +318,16 @@ export function createWorld(canvas) {
     geometry.scale(5.2 / size.y, 5.2 / size.y, 5.2 / size.y);
     geometry.translate(0, 0.88, 0);
 
+    // Vivid saffron-gold for Ganesha sculpture — sacred murthi tone
+    const ganeshaMat = new T.MeshStandardMaterial({
+      color: 0xf0a020,
+      metalness: 0.72,
+      roughness: 0.28,
+      emissive: 0x6a2a00,
+      emissiveIntensity: 0.22
+    });
     for (const holder of sculptureHolders) {
-      mesh(geometry, paleGold, holder);
+      mesh(geometry, ganeshaMat, holder);
     }
 
     const particleMaterial = (isDissolve = false) => new T.ShaderMaterial({
@@ -338,7 +376,8 @@ export function createWorld(canvas) {
     if (l) l.textContent = '3D unavailable. Showing illustrated edition.';
   });
 
-  // ─────────────────────────────────────────�  // ─── MAA PARVATI (DIVINE MOTHER — CHOLA BRONZE & TEMPLE SCULPTURE) ───
+  // ────────────────────────────────────────────────────────────────────────────
+  // ─── MAA PARVATI (DIVINE MOTHER — CHOLA BRONZE & TEMPLE SCULPTURE) ───
   function createParvati(parent, options = {}) {
     const { mode = 'standing', pos = [0, 0, 0], scale = 1, rotY = 0 } = options;
     const g = new T.Group();
@@ -347,173 +386,52 @@ export function createWorld(canvas) {
     g.rotation.y = rotY;
     parent.add(g);
 
-    // Double-tier Lotus Altar Pedestal (Padmapitha)
-    if (mode !== 'rebirth_side') {
-      lathe(g, [[0, -2.25], [0.95, -2.25], [1.02, -2.18], [0.90, -2.05], [0.82, -1.95], [0, -1.95]], darkGold);
-      for (let i = 0; i < 16; i++) {
-        const a = i / 16 * Math.PI * 2;
-        const pet = ell(g, [Math.cos(a) * 0.82, -2.0, Math.sin(a) * 0.82], [0.18, 0.05, 0.26], paleGold);
-        pet.rotation.y = -a + Math.PI / 2;
-        pet.rotation.x = -0.15;
-      }
-      ring(g, 0.84, 0.02, [0, -1.94, 0], sareeGoldBorder).rotation.x = Math.PI / 2;
-    }
-
-    // Sacred Tribhanga Posture Group
-    const body = new T.Group();
-    g.add(body);
-    body.rotation.z = -0.035;
-
-    // Pleated Saree Drapery with Fluted Silhouette
-    const skirtPts = [
-      [0.32, 0.0],
-      [0.35, -0.3],
-      [0.42, -0.7],
-      [0.52, -1.2],
-      [0.64, -1.7],
-      [0.72, -1.92],
-      [0, -1.92]
-    ];
-    lathe(body, skirtPts, sareeCrimson, [0, 0, 0], [1, 1, 1], 40);
-
-    // Saree gold zari embroidery & central pleat cascade
-    ring(body, 0.73, 0.025, [0, -1.90, 0], sareeGoldBorder).rotation.x = Math.PI / 2;
-    ring(body, 0.34, 0.022, [0, 0.02, 0], sareeGoldBorder).rotation.x = Math.PI / 2;
-    for (let p = -2; p <= 2; p++) {
-      path(body, [
-        [p * 0.035, 0.02, 0.33],
-        [p * 0.055, -0.6, 0.42],
-        [p * 0.075, -1.3, 0.52],
-        [p * 0.095, -1.9, 0.65]
-      ], 0.018, 0.012, sareeGoldBorder);
-    }
-
-    // Feminine Sculpted Torso
-    const torsoPts = [
-      [0, -0.05],
-      [0.32, -0.05],
-      [0.28, 0.25],
-      [0.24, 0.45],
-      [0.31, 0.70],
-      [0.36, 0.90],
-      [0.32, 1.05],
-      [0.17, 1.18],
-      [0, 1.18]
-    ];
-    lathe(body, torsoPts, parvatiSkin, [0, 0, 0], [1, 1, 1], 36);
-
-    // Choli gold filigree borders (integrated into torso)
-    ring(body, 0.32, 0.016, [0, 0.75, 0], sareeGoldBorder).rotation.x = Math.PI / 2;
-    ring(body, 0.34, 0.016, [0, 0.96, 0], sareeGoldBorder).rotation.x = Math.PI / 2;
-
-    // Layered gold necklaces (Haara) draped over collarbone
-    for (let i = 0; i < 3; i++) {
-      path(body, [
-        [-0.18, 1.12 - i * 0.08, 0.12],
-        [0, 0.98 - i * 0.10, 0.28 + i * 0.03],
-        [0.18, 1.12 - i * 0.08, 0.12]
-      ], 0.014 - i * 0.002, 0.014 - i * 0.002, sareeGoldBorder);
-    }
-    ell(body, [0, 0.74, 0.32], [0.045, 0.07, 0.03], rubyGem);
-
-    // Saree Pallu (flowing diagonal drape over left shoulder)
-    path(body, [
-      [0.30, 0.02, 0.30], [0.15, 0.50, 0.35], [-0.05, 0.88, 0.30],
-      [-0.28, 1.12, 0.15], [-0.38, 0.95, -0.10], [-0.42, 0.30, -0.22],
-      [-0.38, -0.60, -0.28], [-0.34, -1.40, -0.32]
-    ], 0.14, 0.22, sareeCrimson);
-    path(body, [
-      [0.32, 0.02, 0.31], [0.16, 0.51, 0.36], [-0.04, 0.89, 0.32],
-      [-0.30, 1.14, 0.16], [-0.40, 0.96, -0.09], [-0.44, 0.30, -0.21]
-    ], 0.018, 0.018, sareeGoldBorder);
-
-    // Slender Neck with Tri-rekha lines
-    lathe(body, [[0, 1.16], [0.15, 1.16], [0.13, 1.34], [0.16, 1.48], [0, 1.48]], parvatiSkin);
-    ring(body, 0.15, 0.008, [0, 1.30, 0], sareeGoldBorder).rotation.x = Math.PI / 2;
-
-    // Sculpted Head & Serene Countenance
-    const head = new T.Group();
-    head.position.set(0, 1.72, 0.02);
-    body.add(head);
-
-    lathe(head, [
-      [0, -0.26], [0.12, -0.26], [0.22, -0.08], [0.25, 0.10], [0.23, 0.28], [0.16, 0.40], [0, 0.42]
-    ], parvatiSkin, [0, 0, 0], [1, 1, 1], 32);
-
-    // Sculpted straight nose bridge
-    path(head, [
-      [0, 0.10, 0.22], [0, 0.02, 0.28], [0, -0.07, 0.30], [0, -0.11, 0.26]
-    ], 0.026, 0.034, parvatiSkin);
-
-    // Meditative almond eye contours (carved into facial plane)
-    for (const s of [-1, 1]) {
-      path(head, [
-        [s * 0.04, 0.03, 0.24], [s * 0.11, 0.05, 0.23], [s * 0.17, 0.02, 0.19]
-      ], 0.014, 0.008, darkGold);
-      path(head, [
-        [s * 0.04, 0.08, 0.23], [s * 0.11, 0.11, 0.22], [s * 0.18, 0.07, 0.18]
-      ], 0.012, 0.008, antiqueBronze);
-      // Delicate Makara Kundala earrings
-      ell(head, [s * 0.24, -0.10, 0.02], [0.035, 0.09, 0.05], sareeGoldBorder);
-      ell(head, [s * 0.24, -0.22, 0.02], [0.025, 0.05, 0.025], rubyGem);
-    }
-
-    // Sacred Vermilion Kumkum Bindi
-    ell(head, [0, 0.10, 0.25], [0.022, 0.034, 0.012], rubyGem);
-
-    // Serene sculpted lips
-    ell(head, [0, -0.16, 0.24], [0.055, 0.020, 0.020], rubyGem);
-
-    // Ornate Kiritamukuta (Jeweled Conical Temple Crown)
-    const crown = new T.Group();
-    crown.position.set(0, 0.30, 0.0);
-    head.add(crown);
-    const crownPts = [
-      [0, 0], [0.24, 0.0], [0.22, 0.18], [0.20, 0.36], [0.15, 0.60], [0.08, 0.85], [0.03, 1.02], [0, 1.06]
-    ];
-    lathe(crown, crownPts, sareeGoldBorder, [0, 0, 0], [1, 1, 1], 32);
-    for (let r = 0; r < 3; r++) {
-      ring(crown, 0.22 - r * 0.05, 0.014, [0, 0.15 + r * 0.26, 0], paleGold).rotation.x = Math.PI / 2;
-    }
-    ell(crown, [0, 1.12, 0], [0.045, 0.075, 0.045], rubyGem);
-
-    // Radiating Floral Prabhavali
+    // Radiating Floral Prabhavali (divine halo — procedural accent)
     const prabhavali = halo(g, 1.45);
     prabhavali.position.set(0, 1.70, -0.35);
 
-    // Continuous Sculpted Arms (No floating ball joints!)
+    // Arm anchor groups so existing animation code still works
     const leftArm = new T.Group();
     leftArm.position.set(-0.35, 1.05, 0.02);
-    body.add(leftArm);
+    g.add(leftArm);
     const rightArm = new T.Group();
     rightArm.position.set(0.35, 1.05, 0.02);
-    body.add(rightArm);
+    g.add(rightArm);
 
-    if (mode === 'creation') {
-      // Arms extending gracefully forward weaving golden stardust
-      path(rightArm, [[0, 0, 0], [0.12, -0.32, 0.22], [0.22, -0.42, 0.58]], 0.075, 0.052, parvatiSkin);
-      path(leftArm, [[0, 0, 0], [-0.12, -0.32, 0.22], [-0.22, -0.42, 0.58]], 0.075, 0.052, parvatiSkin);
-      ell(rightArm, [0.22, -0.42, 0.64], [0.055, 0.038, 0.09], parvatiSkin);
-      ell(leftArm, [-0.22, -0.42, 0.64], [0.055, 0.038, 0.09], parvatiSkin);
-      ring(rightArm, 0.058, 0.012, [0.20, -0.40, 0.55], sareeGoldBorder);
-      ring(leftArm, 0.058, 0.012, [-0.20, -0.40, 0.55], sareeGoldBorder);
-    } else {
-      // Right hand in Abhaya mudra / Left hand holding golden lotus
-      path(rightArm, [[0, 0, 0], [0.14, -0.26, 0.12], [0.18, 0.0, 0.26]], 0.075, 0.052, parvatiSkin);
-      ell(rightArm, [0.18, 0.08, 0.30], [0.05, 0.09, 0.032], parvatiSkin);
-      path(leftArm, [[0, 0, 0], [-0.14, -0.28, 0.10], [-0.18, -0.40, 0.24]], 0.075, 0.052, parvatiSkin);
+    // Load the high-quality STL body
+    const stlLoader = new STLLoader();
+    stlLoader.load('./assets/Parvati.stl', (geo) => {
+      geo.computeVertexNormals();
+      geo.computeBoundingBox();
+      const bb = geo.boundingBox;
+      // After -90° X rotation: Y_world = Z_model, height = Z extent
+      const modelHeight = bb.max.z - bb.min.z;
+      const fitScale = 4.0 / modelHeight;
+      const centreX = (bb.max.x + bb.min.x) / 2;
+      const centreY = (bb.max.y + bb.min.y) / 2;
+      geo.translate(-centreX, -centreY, -bb.min.z);
 
-      const lotus = new T.Group();
-      lotus.position.set(-0.18, -0.34, 0.32);
-      leftArm.add(lotus);
-      mesh(new T.CylinderGeometry(0.014, 0.014, 0.42, 8), darkGold, lotus, [0, -0.15, 0]);
-      for (let p = 0; p < 8; p++) {
-        const pa = p / 8 * Math.PI * 2;
-        const pet = ell(lotus, [Math.cos(pa) * 0.11, 0.04, Math.sin(pa) * 0.11], [0.065, 0.028, 0.13], paleGold);
-        pet.rotation.y = -pa;
-      }
-      ell(lotus, [0, 0.06, 0], [0.06, 0.05, 0.06], rubyGem);
-    }
+      const bodyMesh = new T.Mesh(geo, new T.MeshStandardMaterial({
+        color: 0xe8724a,        // rich saffron-rose — Chola bronze warmth
+        metalness: 0.14,
+        roughness: 0.52,
+        emissive: 0x6a1800,
+        emissiveIntensity: 0.18,
+        side: T.DoubleSide,
+        envMapIntensity: 1.0
+      }));
+      bodyMesh.scale.setScalar(fitScale);
+      // STL exported Z-up: rotate -90° on X to stand upright, then face camera (+Z)
+      bodyMesh.rotation.x = -Math.PI / 2;
+      bodyMesh.position.y = -2.0;
+      g.add(bodyMesh);
+
+      // Reposition accessories to match the loaded model proportions
+      const totalH = modelHeight * fitScale;
+      leftArm.position.y  = totalH * 0.68 - 2.0;
+      rightArm.position.y = totalH * 0.68 - 2.0;
+      prabhavali.position.y = totalH * 0.82 - 2.0;
+    });
 
     return {
       group: g,
@@ -523,17 +441,13 @@ export function createWorld(canvas) {
       update(t, local) {
         prabhavali.rotation.z = t * 0.012;
         rightArm.rotation.z = -0.12 + Math.sin(t * 0.8) * 0.15;
-        leftArm.rotation.z = 0.12 - Math.sin(t * 0.8 + 0.6) * 0.15;
+        leftArm.rotation.z  =  0.12 - Math.sin(t * 0.8 + 0.6) * 0.15;
         if (mode === 'creation') {
           g.position.y = pos[1] + Math.sin(t * 1.4) * 0.035;
-          rightArm.position.y = 1.05 + Math.sin(t * 1.8) * 0.02;
-          leftArm.position.y = 1.05 + Math.sin(t * 1.8 + 0.5) * 0.02;
         }
       }
     };
   }
-
-  // ─── LORD SHIVA (MAHADEVA — CHOLA BRONZE & KAILASH ASCETIC SCULPTURE) ───
   function createShiva(parent, options = {}) {
     const { mode = 'arrival', pos = [0, 0, 0], scale = 1, rotY = 0 } = options;
     const g = new T.Group();
@@ -542,192 +456,11 @@ export function createWorld(canvas) {
     g.rotation.y = rotY;
     parent.add(g);
 
-    // Himalayan Kailash Crag Pedestal with Altar Base
-    const crag = createMountain(14, 1.8, 1.8);
-    mesh(crag, rockFace, g, [0, -2.5, 0]);
-    lathe(g, [[0, -2.1], [1.1, -2.1], [1.18, -2.0], [1.02, -1.9], [0, -1.9]], darkGold);
-
-    // Continuous Muscular Yogic Legs (No floating ball joints!)
-    for (const [lx, s] of [[-0.34, -1], [0.34, 1]]) {
-      path(g, [
-        [lx, -0.4, 0],
-        [lx * 1.04, -0.9, 0.04],
-        [lx, -1.35, 0.02],
-        [lx, -1.95, 0]
-      ], 0.17, 0.11, shivaSkin);
-      ring(g, 0.13, 0.016, [lx, -1.98, 0], darkGold).rotation.x = Math.PI / 2;
-      ell(g, [lx, -2.06, 0.14], [0.11, 0.06, 0.24], shivaSkin);
-    }
-
-    // Tiger Skin Dhoti (Vyaghrambara)
-    const dhotiPts = [
-      [0.42, 0.2],
-      [0.46, -0.1],
-      [0.54, -0.45],
-      [0.62, -0.85],
-      [0.68, -1.1],
-      [0, -1.1]
-    ];
-    lathe(g, dhotiPts, tigerSkin, [0, 0, 0], [1, 1, 1], 32);
-    ring(g, 0.47, 0.026, [0, 0.24, 0], darkGold).rotation.x = Math.PI / 2;
-    ell(g, [0, 0.24, 0.48], [0.09, 0.07, 0.05], gold);
-
-    // Athletic Yogic Torso (Simha-Kati: Lion-Waist Profile)
-    const torsoPts = [
-      [0, 0.15],
-      [0.42, 0.15],
-      [0.36, 0.55],
-      [0.44, 0.95],
-      [0.55, 1.40],
-      [0.51, 1.70],
-      [0.24, 1.90],
-      [0, 1.90]
-    ];
-    lathe(g, torsoPts, shivaSkin, [0, 0, 0], [1, 1, 1], 36);
-
-    // Sacred Yajnopavita (Tri-strand Rudraksha thread)
-    const yajnaPts = [];
-    for (let i = 0; i <= 24; i++) {
-      const u = i / 24;
-      yajnaPts.push([
-        T.MathUtils.lerp(-0.45, 0.46, u),
-        T.MathUtils.lerp(1.70, 0.32, u),
-        Math.sin(u * Math.PI) * 0.42 + 0.16
-      ]);
-    }
-    beads(g, yajnaPts, 0.032, darkGold);
-
-    // Neelakantha: Sacred Blue Throat
-    lathe(g, [[0, 1.88], [0.22, 1.88], [0.20, 2.06], [0.24, 2.22], [0, 2.22]], shivaSkin);
-    ell(g, [0, 2.04, 0.20], [0.09, 0.07, 0.05], new T.MeshBasicMaterial({ color: 0x00a2ff }));
-
-    // Sacred Naga Vasuki: Realistic undulating serpent coiled 3 times around neck
-    const vasukiPts = [
-      [0.26, 1.94, 0.16], [-0.20, 1.98, 0.18], [-0.24, 2.08, -0.15],
-      [0.20, 2.12, -0.15], [0.28, 2.18, 0.18], [0.44, 2.32, 0.28],
-      [0.50, 2.46, 0.34]
-    ];
-    path(g, vasukiPts, 0.048, 0.032, vasukiGreen);
-    const vHood = ell(g, [0.52, 2.50, 0.36], [0.12, 0.06, 0.14], vasukiGreen);
-    vHood.rotation.x = -0.25; vHood.rotation.y = -0.4;
-    ell(vHood, [-0.04, 0.02, 0.06], [0.018, 0.018, 0.018], rubyGem);
-    ell(vHood, [0.04, 0.02, 0.06], [0.018, 0.018, 0.018], rubyGem);
-    ell(vHood, [0, 0.035, 0.02], [0.022, 0.030, 0.022], gold);
-
-    // Rudraksha Garland around Neck
-    const neckRudra = [];
-    for (let i = 0; i < 16; i++) {
-      const a = i / 16 * Math.PI * 2;
-      neckRudra.push([Math.cos(a) * 0.27, 1.96, Math.sin(a) * 0.27]);
-    }
-    beads(g, neckRudra, 0.034, darkGold);
-
-    // Noble Ascetic Head & Sculpted Visage
-    const head = new T.Group();
-    head.position.set(0, 2.38, 0.04);
-    g.add(head);
-
-    lathe(head, [
-      [0, -0.28], [0.14, -0.28], [0.25, -0.08], [0.28, 0.12], [0.26, 0.32], [0.18, 0.44], [0, 0.46]
-    ], shivaSkin, [0, 0, 0], [1, 1, 1], 32);
-
-    // Sculpted straight nose bridge
-    path(head, [
-      [0, 0.12, 0.24], [0, 0.02, 0.31], [0, -0.08, 0.33], [0, -0.13, 0.28]
-    ], 0.032, 0.040, shivaSkin);
-
-    // Sacred Tripundra (3 horizontal Vibhuti ash lines across brow)
-    for (let r = -1; r <= 1; r++) {
-      mesh(box, ivory, head, [0, 0.16 + r * 0.034, 0.29], [0.24 - Math.abs(r) * 0.03, 0.014, 0.02]);
-    }
-
-    // Trinetra (Third Eye): vertical luminous aperture
-    ell(head, [0, 0.16, 0.30], [0.024, 0.054, 0.018], trinetraGlow);
-    ell(head, [0, 0.16, 0.31], [0.014, 0.018, 0.010], rubyGem);
-
-    // Meditative almond eye contours (carved flush into the bronze face)
-    for (const s of [-1, 1]) {
-      path(head, [
-        [s * 0.05, 0.04, 0.26], [s * 0.12, 0.06, 0.25], [s * 0.18, 0.03, 0.21]
-      ], 0.015, 0.009, darkGold);
-      path(head, [
-        [s * 0.05, 0.09, 0.25], [s * 0.13, 0.12, 0.24], [s * 0.20, 0.08, 0.20]
-      ], 0.014, 0.009, antiqueBronze);
-      // Sacred gold Kundala earrings
-      ell(head, [s * 0.28, -0.10, 0.02], [0.035, 0.10, 0.06], shivaSkin);
-      ell(head, [s * 0.28, -0.22, 0.02], [0.030, 0.06, 0.035], sareeGoldBorder);
-    }
-
-    // Majestic Jatamukuta (Matted Locks Crown) with Cascading Braids
-    const jata = new T.Group();
-    jata.position.set(0, 0.36, -0.02);
-    head.add(jata);
-
-    const jataPts = [
-      [0, 0], [0.30, 0.0], [0.28, 0.24], [0.25, 0.48], [0.20, 0.72], [0.14, 0.94], [0.05, 1.10], [0, 1.15]
-    ];
-    lathe(jata, jataPts, obsidian, [0, 0, 0], [1, 1, 1], 32);
-
-    // Cascading hair braids falling over shoulders
-    for (const s of [-1, 1]) {
-      path(head, [
-        [s * 0.26, 0.15, 0.05], [s * 0.35, -0.20, 0.02],
-        [s * 0.38, -0.65, 0.0], [s * 0.35, -1.15, 0.05]
-      ], 0.048, 0.030, obsidian);
-    }
-
-    // Chandra (Silver Crescent Moon)
-    const chandra = mesh(new T.TorusGeometry(0.24, 0.030, 14, 40, Math.PI * 0.95), chandraSilver, jata, [-0.30, 0.60, 0.12]);
-    chandra.rotation.z = Math.PI * 0.75;
-
-    // Celestial Ganga: Dynamic glowing fountain
-    const gangaGeo = new T.BufferGeometry();
-    const gCount = 42;
-    const gPos = new Float32Array(gCount * 3);
-    for (let i = 0; i < gCount; i++) {
-      const u = i / gCount;
-      gPos[i * 3] = Math.sin(u * 9.0) * 0.14 + 0.20 * u;
-      gPos[i * 3 + 1] = 1.20 - u * 2.1;
-      gPos[i * 3 + 2] = -Math.cos(u * 7.0) * 0.16 - 0.24;
-    }
-    gangaGeo.setAttribute('position', new T.BufferAttribute(gPos, 3));
-    jata.add(new T.Line(gangaGeo, new T.LineBasicMaterial({ color: 0x7be4ff, transparent: true, opacity: 0.85 })));
-
-    // Cosmic Prabhavali Halo
+    // Cosmic Prabhavali Halo (retained as a divine accent)
     const shivaHalo = halo(g, 1.85);
     shivaHalo.position.set(0, 2.38, -0.40);
 
-    // Grand Ornate Trishul with Damru & Silk Ribbon
-    const shivaTrishul = new T.Group();
-    g.add(shivaTrishul);
-    shivaTrishul.position.set(1.05, 0.6, 0.45);
-
-    mesh(new T.CylinderGeometry(0.050, 0.070, 8.6, 24), antiqueBronze, shivaTrishul, [0, -0.4, 0]);
-    for (let y = -4.0; y < 1.4; y += 0.95) {
-      ring(shivaTrishul, 0.082, 0.015, [0, y, 0], gold).rotation.x = Math.PI / 2;
-    }
-    lathe(shivaTrishul, [[0, 1.2], [0.16, 1.2], [0.22, 1.35], [0.13, 1.5], [0, 1.5]], gold);
-
-    path(shivaTrishul, [
-      [-1.10, 3.5, 0], [-1.02, 2.4, 0], [-0.58, 1.65, 0], [0, 1.45, 0],
-      [0.58, 1.65, 0], [1.02, 2.4, 0], [1.10, 3.5, 0]
-    ], 0.070, 0.050, gold);
-    mesh(new T.ConeGeometry(0.13, 1.10, 16), gold, shivaTrishul, [0, 4.05, 0]);
-    mesh(new T.ConeGeometry(0.11, 0.90, 16), gold, shivaTrishul, [-1.10, 3.75, 0]);
-    mesh(new T.ConeGeometry(0.11, 0.90, 16), gold, shivaTrishul, [1.10, 3.75, 0]);
-
-    // Damru (Hourglass drum) with sacred cords
-    const damru = new T.Group();
-    damru.position.set(0, 0.85, 0);
-    shivaTrishul.add(damru);
-    for (const s of [-1, 1]) {
-      mesh(new T.CylinderGeometry(0.30, 0.10, 0.40, 28), darkGold, damru, [0, s * 0.20, 0]);
-      ring(damru, 0.31, 0.018, [0, s * 0.39, 0], paleGold).rotation.x = Math.PI / 2;
-    }
-    ring(damru, 0.12, 0.025, [0, 0, 0], crimson).rotation.x = Math.PI / 2;
-    path(damru, [[0, 0, 0], [-0.32, -0.4, 0.15], [-0.50, -1.0, 0.25], [-0.38, -1.5, 0.35]], 0.055, 0.035, crimson);
-
-    // Continuous Sculpted Arms
+    // Arm anchor groups (used by battle / blessing animations)
     const rightArm = new T.Group();
     rightArm.position.set(0.51, 1.65, 0.04);
     g.add(rightArm);
@@ -735,101 +468,79 @@ export function createWorld(canvas) {
     leftArm.position.set(-0.51, 1.65, 0.04);
     g.add(leftArm);
 
-    if (mode === 'battle') {
-      path(rightArm, [[0, 0, 0], [0.24, -0.32, 0.32], [0.30, -0.56, 0.36]], 0.11, 0.078, shivaSkin);
-      path(leftArm, [[0, 0, 0], [-0.35, -0.22, 0.32], [-0.44, 0.08, 0.55]], 0.11, 0.078, shivaSkin);
-    } else if (mode === 'blessing') {
-      path(rightArm, [[0, 0, 0], [0.28, -0.15, 0.22], [0.38, 0.35, 0.45]], 0.11, 0.078, shivaSkin);
-      ell(rightArm, [0.38, 0.45, 0.48], [0.075, 0.12, 0.040], shivaSkin);
-      path(leftArm, [[0, 0, 0], [-0.22, -0.42, 0.12], [-0.30, -0.75, 0.22]], 0.11, 0.078, shivaSkin);
-    } else {
-      path(rightArm, [[0, 0, 0], [0.22, -0.42, 0.20], [0.28, -0.85, 0.32]], 0.11, 0.078, shivaSkin);
-      path(leftArm, [[0, 0, 0], [-0.22, -0.42, 0.10], [-0.26, -0.85, 0.16]], 0.11, 0.078, shivaSkin);
-    }
+    // Trishul removed from scene — Shiva's presence conveyed through STL model and halo
+    const shivaTrishul = new T.Group();
+    g.add(shivaTrishul);
+    shivaTrishul.visible = false;
+    // Damru stub — kept so animation code referencing damru.rotation.y still works
+    const damru = new T.Group();
+    shivaTrishul.add(damru);
+
+    // Load the high-quality STL body
+    const stlLoader = new STLLoader();
+    stlLoader.load('./assets/Shiva.stl', (geo) => {
+      geo.computeVertexNormals();
+      geo.computeBoundingBox();
+      const bb = geo.boundingBox;
+      // After -90° X rotation: Y_world = Z_model, height = Z extent
+      const modelHeight = bb.max.z - bb.min.z;
+      const fitScale = 4.8 / modelHeight;
+      const centreX = (bb.max.x + bb.min.x) / 2;
+      const centreY = (bb.max.y + bb.min.y) / 2;
+      geo.translate(-centreX, -centreY, -bb.min.z);
+
+      const bodyMesh = new T.Mesh(geo, new T.MeshStandardMaterial({
+        color: 0x3a78c4,        // vivid Neelkantha cobalt-blue — traditional Shiva complexion
+        metalness: 0.16,
+        roughness: 0.50,
+        emissive: 0x001a5a,
+        emissiveIntensity: 0.22,
+        side: T.DoubleSide,
+        envMapIntensity: 1.0
+      }));
+      bodyMesh.scale.setScalar(fitScale);
+      // STL exported Z-up: rotate -90° on X to stand upright, then face camera (+Z)
+      bodyMesh.rotation.x = -Math.PI / 2;
+      bodyMesh.position.y = -2.0;
+      g.add(bodyMesh);
+
+      // Reposition accessories to match the loaded model proportions
+      const totalH = modelHeight * fitScale;
+      rightArm.position.y  = totalH * 0.70 - 2.0;
+      leftArm.position.y   = totalH * 0.70 - 2.0;
+      shivaHalo.position.y = totalH * 0.88 - 2.0;
+      shivaTrishul.position.set(totalH * 0.28, totalH * 0.10 - 2.0, 0.45);
+    });
 
     return {
       group: g,
-      rightArm, leftArm,
+      rightArm,
+      leftArm,
       trishul: shivaTrishul,
       damru,
       shivaHalo,
       update(t, local) {
         rightArm.rotation.z = Math.sin(t * 0.7) * 0.12;
-        leftArm.rotation.x = Math.sin(t * 0.8 + 1) * 0.1;
+        leftArm.rotation.x  = Math.sin(t * 0.8 + 1) * 0.1;
         if (mode === 'blessing') rightArm.rotation.x = -0.35 - Math.sin(t * 0.7) * 0.12;
-        damru.rotation.y = t * 0.8;
+        damru.rotation.y    = t * 0.8;
         shivaHalo.rotation.z = -t * 0.06;
       }
     };
   }
-
-  // ─── MAA SHAKTI (ADI PARASHAKTI — COSMIC FIERCE MOTHER IN FULL GLORY) ───
+// ─── MAA SHAKTI (ADI PARASHAKTI — ANGRY MAA PARVATI STL MODEL) ───
   function createShakti(parent) {
     const g = new T.Group();
     g.position.set(0, 0.8, 0);
     parent.add(g);
 
-    // Floating Cosmic Pedestal
+    // Floating Cosmic Pedestal — kept for dramatic staging
     lathe(g, [[0, -2.2], [1.15, -2.2], [1.25, -2.05], [1.05, -1.95], [0, -1.95]], obsidian);
     ring(g, 1.28, 0.035, [0, -2.0, 0], fireGlow).rotation.x = Math.PI / 2;
 
-    // Billowing Fierce Cosmic Saree with Dynamic Wave
-    const skirtPts = [
-      [0.36, 0.1], [0.44, -0.3], [0.58, -0.8], [0.75, -1.4], [0.92, -1.95], [0, -1.95]
-    ];
-    lathe(g, skirtPts, shaktiArmor, [0, 0, 0], [1, 1, 1], 36);
-
-    // Gold Armored Bodice & Breastplate
-    lathe(g, [[0, 0.1], [0.36, 0.1], [0.30, 0.45], [0.40, 0.85], [0.34, 1.05], [0.18, 1.20], [0, 1.20]], shaktiArmor);
-    ring(g, 0.36, 0.02, [0, 0.85, 0.05], sareeGoldBorder).rotation.x = Math.PI / 2;
-
-    // Sacred Gem Garland (Mundamala)
-    const mundaPts = [];
-    for (let i = 0; i <= 22; i++) {
-      const u = i / 22;
-      mundaPts.push([
-        Math.sin(u * Math.PI * 2) * 0.40,
-        0.65 - Math.sin(u * Math.PI) * 0.95,
-        Math.cos(u * Math.PI * 2) * 0.26 + 0.18
-      ]);
-    }
-    beads(g, mundaPts, 0.042, rubyGem);
-
-    // Fierce Sculpted Head & Visage
-    const head = new T.Group();
-    head.position.set(0, 1.68, 0.04);
-    g.add(head);
-
-    lathe(head, [
-      [0, -0.26], [0.13, -0.26], [0.24, -0.08], [0.27, 0.10], [0.24, 0.30], [0.17, 0.42], [0, 0.44]
-    ], parvatiSkin, [0, 0, 0], [1, 1, 1], 32);
-
-    path(head, [[0, 0.10, 0.24], [0, 0.0, 0.30], [0, -0.10, 0.32], [0, -0.14, 0.28]], 0.030, 0.038, parvatiSkin);
-
-    // Blazing Cosmic Third Eye
-    ell(head, [0, 0.16, 0.30], [0.034, 0.070, 0.018], fireGlow);
-    ell(head, [0, 0.16, 0.31], [0.018, 0.022, 0.012], warmGlow);
-
-    // Fierce Eye Contours
-    for (const s of [-1, 1]) {
-      path(head, [
-        [s * 0.05, 0.04, 0.25], [s * 0.12, 0.06, 0.24], [s * 0.18, 0.03, 0.20]
-      ], 0.016, 0.010, fireGlow);
-      path(head, [
-        [s * 0.05, 0.09, 0.24], [s * 0.13, 0.13, 0.23], [s * 0.20, 0.08, 0.19]
-      ], 0.015, 0.010, rubyGem);
-    }
-
-    // Sacred Fierce Mukuta (Rising Cosmic Crown)
-    const crown = new T.Group();
-    crown.position.set(0, 0.28, 0.01);
-    head.add(crown);
-    lathe(crown, [[0, 0], [0.30, 0], [0.26, 0.35], [0.18, 0.70], [0.09, 1.05], [0, 1.15]], sareeGoldBorder);
-    ell(crown, [0, 1.22, 0], [0.075, 0.15, 0.075], fireGlow);
-
-    // Blazing Double Prabhavali with 24 Solar Rays
+    // Blazing Double Prabhavali with 24 Solar Rays — retained as cosmic accent
     const shaktiHalo = new T.Group();
-    shaktiHalo.position.set(0, 1.68, -0.40);
+    shaktiHalo.position.set(0, 2.0, -0.40);
     g.add(shaktiHalo);
     ring(shaktiHalo, 1.95, 0.028, [0, 0, 0], fireGlow);
     ring(shaktiHalo, 2.35, 0.020, [0, 0, 0], warmGlow);
@@ -839,59 +550,47 @@ export function createWorld(canvas) {
       ray.rotation.z = a - Math.PI / 2;
     }
 
-    // ── 8 RADIATING DIVINE ARMS WITH CELESTIAL WEAPONS ──
-    const armDefs = [
-      [Math.PI * 0.38, 'trishul'],
-      [Math.PI * 0.22, 'khadga'],
-      [Math.PI * 0.06, 'chakra'],
-      [-Math.PI * 0.10, 'abhaya'],
-      [Math.PI * 0.62, 'agni'],
-      [Math.PI * 0.78, 'bow'],
-      [Math.PI * 0.94, 'arrow'],
-      [Math.PI * 1.10, 'gada']
-    ];
-
-    armDefs.forEach(([a, wType]) => {
-      const armGroup = new T.Group();
-      armGroup.position.set(Math.cos(a) * 0.44, 1.05 + Math.sin(a) * 0.34, -0.06);
-      g.add(armGroup);
-
-      const armEnd = [Math.cos(a) * 1.22, Math.sin(a) * 1.22, 0.28];
-      path(armGroup, [[0, 0, 0], [armEnd[0] * 0.5, armEnd[1] * 0.5, 0.16], armEnd], 0.082, 0.058, parvatiSkin);
-      ring(armGroup, 0.088, 0.016, [armEnd[0] * 0.75, armEnd[1] * 0.75, 0.20], sareeGoldBorder);
-
-      const wGroup = new T.Group();
-      wGroup.position.set(...armEnd);
-      armGroup.add(wGroup);
-
-      if (wType === 'trishul') {
-        mesh(new T.CylinderGeometry(0.032, 0.032, 2.5, 12), sareeGoldBorder, wGroup);
-        path(wGroup, [[-0.42, 1.25, 0], [-0.28, 0.85, 0], [0, 0.75, 0], [0.28, 0.85, 0], [0.42, 1.25, 0]], 0.042, 0.042, fireGlow);
-        mesh(new T.ConeGeometry(0.085, 0.50, 12), fireGlow, wGroup, [0, 1.5, 0]);
-      } else if (wType === 'khadga') {
-        path(wGroup, [[0, -0.4, 0], [0, 0.8, 0], [0.16, 1.4, 0]], 0.044, 0.015, paleGold);
-        mesh(box, darkGold, wGroup, [0, -0.4, 0], [0.28, 0.06, 0.08]);
-      } else if (wType === 'chakra') {
-        ring(wGroup, 0.42, 0.030, [0, 0, 0], glow);
-        for (let s = 0; s < 8; s++) {
-          const sa = s / 8 * Math.PI * 2;
-          const blade = mesh(new T.ConeGeometry(0.060, 0.22, 6), fireGlow, wGroup, [Math.cos(sa) * 0.44, Math.sin(sa) * 0.44, 0]);
-          blade.rotation.z = sa - Math.PI / 2;
-        }
-      } else if (wType === 'agni') {
-        lathe(wGroup, [[0, 0], [0.16, 0], [0.20, 0.12], [0.15, 0.22], [0, 0.22]], sareeGoldBorder);
-        ell(wGroup, [0, 0.26, 0], [0.12, 0.28, 0.12], fireGlow);
-      } else if (wType === 'bow') {
-        path(wGroup, [[-0.20, -0.80, 0], [0.30, 0, 0], [-0.20, 0.80, 0]], 0.035, 0.020, sareeGoldBorder);
-      } else if (wType === 'arrow') {
-        mesh(new T.CylinderGeometry(0.018, 0.018, 1.6, 8), paleGold, wGroup);
-        mesh(new T.ConeGeometry(0.070, 0.26, 8), fireGlow, wGroup, [0, 0.90, 0]);
-      } else if (wType === 'gada') {
-        mesh(new T.CylinderGeometry(0.030, 0.045, 1.4, 12), darkGold, wGroup);
-        lathe(wGroup, [[0, 0.6], [0.24, 0.6], [0.26, 0.85], [0.16, 1.1], [0, 1.15]], sareeGoldBorder);
+    // Load the Angry Maa Parvati (2) STL model
+    const stlLoader = new STLLoader();
+    stlLoader.load('./assets/Angry Maa Parvati (2).stl', (geo) => {
+      geo.deleteAttribute('normal');
+      geo = mergeVertices(geo, 0.00001);
+      geo.computeVertexNormals();
+      geo.computeBoundingBox();
+      const bb = geo.boundingBox;
+      // Fit to ~5 world-units tall; STL may be Z-up so rotate -90° on X
+      const modelHeight = bb.max.z - bb.min.z;
+      const modelHeightY = bb.max.y - bb.min.y;
+      const useZUp = modelHeight > modelHeightY;
+      const fitH = 5.0;
+      const fitDim = useZUp ? modelHeight : modelHeightY;
+      const fitScale = fitH / fitDim;
+      const centreX = (bb.max.x + bb.min.x) / 2;
+      const centreY = (bb.max.y + bb.min.y) / 2;
+      const centreZ = (bb.max.z + bb.min.z) / 2;
+      if (useZUp) {
+        geo.translate(-centreX, -centreY, -bb.min.z);
       } else {
-        ell(wGroup, [0, 0, 0.05], [0.07, 0.14, 0.04], parvatiSkin);
+        geo.translate(-centreX, -bb.min.y, -centreZ);
       }
+
+      const bodyMesh = new T.Mesh(geo, new T.MeshStandardMaterial({
+        color: 0xd42020,        // fierce crimson-scarlet — Adi Parashakti cosmic rage
+        metalness: 0.20,
+        roughness: 0.45,
+        emissive: 0x7a0000,
+        emissiveIntensity: 0.30,
+        side: T.DoubleSide,
+        envMapIntensity: 1.0
+      }));
+      bodyMesh.scale.setScalar(fitScale);
+      if (useZUp) bodyMesh.rotation.x = -Math.PI / 2;
+      bodyMesh.position.y = -2.0;
+      g.add(bodyMesh);
+
+      // Reposition halo to top of loaded model
+      const totalH = fitH;
+      shaktiHalo.position.y = totalH * 0.88 - 2.0;
     });
 
     return {
@@ -904,7 +603,42 @@ export function createWorld(canvas) {
     };
   }
 
-  // ─── CHILD GANESHA (YOUNG PRINCE & GUARDIAN SENTINEL) ───
+  // ─── CHILD GANESHA (STL — HUMAN HEAD GANESHA, CHAPTERS 1 & 2) ───
+  // STL is loaded ONCE and shared across all instances (creation, guardian, battle, rebirth).
+  const childGaneshaHolders = []; // { head, mode, scale }
+
+  // Sacred golden material — vivid saffron-ochre divine child tone
+  const childGaneshaMat = new T.MeshStandardMaterial({
+    color: 0xf0a020,
+    metalness: 0.72,
+    roughness: 0.28,
+    emissive: 0x6a2a00,
+    emissiveIntensity: 0.22,
+    side: T.DoubleSide
+  });
+
+  new STLLoader().load('./assets/Human Head Ganesha.stl', (geo) => {
+    geo.deleteAttribute('normal');
+    geo = mergeVertices(geo, 0.00001);
+    geo.computeVertexNormals();
+    geo.rotateX(-Math.PI / 2);
+    geo.center();
+    geo.computeBoundingBox();
+    const size = new T.Vector3();
+    geo.boundingBox.getSize(size);
+
+    for (const { head, mode } of childGaneshaHolders) {
+      const clonedGeo = geo.clone();
+      const fitH = mode === 'creation' ? 3.2 : 3.8;
+      const fitScale = fitH / size.y;
+      clonedGeo.scale(fitScale, fitScale, fitScale);
+      clonedGeo.translate(0, 0.15, 0);
+      head.add(new T.Mesh(clonedGeo, childGaneshaMat));
+    }
+  }, undefined, (err) => {
+    console.warn('Human Head Ganesha STL failed to load', err);
+  });
+
   function createChildGanesha(parent, options = {}) {
     const { mode = 'creation', pos = [0, 0, 0], scale = 1, rotY = 0 } = options;
     const g = new T.Group();
@@ -913,43 +647,35 @@ export function createWorld(canvas) {
     g.rotation.y = rotY;
     parent.add(g);
 
-    const childSkin = new T.MeshStandardMaterial({
-      color: 0xb18767, metalness: 0.0, roughness: 0.78, side: T.DoubleSide
-    });
+    // Blooming Golden Lotus Pedestal (Padmapitha) — shared by both modes
+    lathe(g, [[0, -0.2], [0.68, -0.2], [0.74, -0.1], [0.62, 0.0], [0, 0.0]], darkGold);
+    for (let i = 0; i < 14; i++) {
+      const a = i / 14 * Math.PI * 2;
+      const pet = ell(g, [Math.cos(a) * 0.62, 0.02, Math.sin(a) * 0.62], [0.18, 0.04, 0.26], paleGold);
+      pet.rotation.y = -a + Math.PI / 2;
+      pet.rotation.x = -0.25;
+    }
+
+    // Tiny heart-center orb — kept for animation reference but invisible (STL provides the body)
+    const heartGlow = ell(g, [0, 0.72, 0.24], [0.06, 0.06, 0.04], warmGlow);
+    heartGlow.visible = false;
+
+    // Head group anchor — STL body gets added here once loaded
+    const head = new T.Group();
+    g.add(head);
+    childGaneshaHolders.push({ head, mode });
+
+    // Guardian Staff — hidden, STL model provides the full figure
+    const staff = new T.Group();
+    staff.position.set(0.15, 0.35, 0.36);
+    g.add(staff);
+    mesh(new T.CylinderGeometry(0.042, 0.052, 3.4, 16), treeBark, staff, [0, 0, 0]);
+    mesh(new T.ConeGeometry(0.12, 0.36, 14), sareeGoldBorder, staff, [0, 1.8, 0]);
+    ring(staff, 0.080, 0.018, [0, 1.6, 0], sareeGoldBorder).rotation.x = Math.PI / 2;
+    ring(staff, 0.075, 0.016, [0, -1.6, 0], antiqueBronze).rotation.x = Math.PI / 2;
+    staff.visible = false;
 
     if (mode === 'creation') {
-      // Blooming Golden Lotus Pedestal (Padmapitha)
-      lathe(g, [[0, -0.2], [0.68, -0.2], [0.74, -0.1], [0.62, 0.0], [0, 0.0]], darkGold);
-      for (let i = 0; i < 14; i++) {
-        const a = i / 14 * Math.PI * 2;
-        const pet = ell(g, [Math.cos(a) * 0.62, 0.02, Math.sin(a) * 0.62], [0.18, 0.04, 0.26], paleGold);
-        pet.rotation.y = -a + Math.PI / 2;
-        pet.rotation.x = -0.25;
-      }
-
-      // Seated Lotus Posture with contoured legs
-      path(g, [[-0.34, 0.12, 0.05], [-0.26, 0.16, 0.24], [0, 0.10, 0.32]], 0.11, 0.08, childSkin);
-      path(g, [[0.34, 0.12, 0.05], [0.26, 0.16, 0.24], [0, 0.10, 0.32]], 0.11, 0.08, childSkin);
-      lathe(g, [[0, 0.1], [0.32, 0.1], [0.36, 0.35], [0.30, 0.55], [0, 0.55]], sareeGoldBorder);
-
-      // Torso & heart center
-      lathe(g, [[0, 0.50], [0.26, 0.50], [0.28, 0.72], [0.22, 0.90], [0.12, 0.98], [0, 0.98]], childSkin);
-      const heartGlow = ell(g, [0, 0.72, 0.24], [0.06, 0.06, 0.04], warmGlow);
-
-      // Head & serene features
-      lathe(g, [[0, 0.98], [0.14, 0.98], [0.22, 1.15], [0.24, 1.30], [0.16, 1.45], [0, 1.48]], childSkin);
-      ell(g, [0, 1.28, 0.24], [0.022, 0.038, 0.012], rubyGem);
-      for (const s of [-1, 1]) {
-        path(g, [
-          [s * 0.04, 1.22, 0.23], [s * 0.09, 1.24, 0.22], [s * 0.14, 1.21, 0.18]
-        ], 0.012, 0.007, darkGold);
-      }
-      lathe(g, [[0, 1.46], [0.16, 1.46], [0.13, 1.68], [0.05, 1.82], [0, 1.88]], sareeGoldBorder);
-
-      // Hands resting gently in lap
-      path(g, [[-0.24, 0.80, 0.05], [-0.30, 0.50, 0.18], [-0.18, 0.30, 0.30]], 0.065, 0.048, childSkin);
-      path(g, [[0.24, 0.80, 0.05], [0.30, 0.50, 0.18], [0.18, 0.30, 0.30]], 0.065, 0.048, childSkin);
-
       return {
         group: g,
         heartGlow,
@@ -960,46 +686,10 @@ export function createWorld(canvas) {
         }
       };
     } else {
-      // Guardian Boy Sentinel (Standing firm at Kailash portal, staff gripped with two hands)
-      for (const lx of [-0.18, 0.18]) {
-        path(g, [
-          [lx, 0.0, 0], [lx * 1.05, -0.45, 0.04], [lx, -0.85, 0.02], [lx, -1.25, 0]
-        ], 0.11, 0.08, childSkin);
-        ell(g, [lx, -1.30, 0.08], [0.08, 0.05, 0.15], childSkin);
-      }
-      lathe(g, [[0, -0.4], [0.28, -0.4], [0.34, -0.1], [0.30, 0.2], [0, 0.2]], sareeGoldBorder);
-      ring(g, 0.30, 0.022, [0, 0.20, 0], sareeGoldBorder).rotation.x = Math.PI / 2;
-
-      lathe(g, [[0, 0.2], [0.26, 0.2], [0.24, 0.45], [0.28, 0.70], [0.24, 0.86], [0.13, 0.96], [0, 0.96]], childSkin);
-      ring(g, 0.16, 0.014, [0, 0.76, 0.12], sareeGoldBorder).rotation.x = Math.PI / 3;
-
-      const head = new T.Group(); g.add(head);
-      lathe(head, [[0, 0.96], [0.14, 0.96], [0.22, 1.12], [0.24, 1.28], [0.16, 1.42], [0, 1.45]], childSkin);
-      ell(head, [0, 1.28, 0.24], [0.022, 0.042, 0.012], rubyGem);
-      for (const s of [-1, 1]) {
-        path(head, [
-          [s * 0.04, 1.22, 0.24], [s * 0.09, 1.25, 0.23], [s * 0.14, 1.22, 0.19]
-        ], 0.012, 0.007, darkGold);
-      }
-      lathe(head, [[0, 1.44], [0.16, 1.44], [0.13, 1.68], [0.05, 1.82], [0, 1.88]], sareeGoldBorder);
-
-      // Sacred Carved Wooden Guardian Staff
-      const staff = new T.Group();
-      staff.position.set(0.15, 0.35, 0.36);
-      g.add(staff);
-      mesh(new T.CylinderGeometry(0.042, 0.052, 3.4, 16), treeBark, staff, [0, 0, 0]);
-      mesh(new T.ConeGeometry(0.12, 0.36, 14), sareeGoldBorder, staff, [0, 1.8, 0]);
-      ring(staff, 0.080, 0.018, [0, 1.6, 0], sareeGoldBorder).rotation.x = Math.PI / 2;
-      ring(staff, 0.075, 0.016, [0, -1.6, 0], antiqueBronze).rotation.x = Math.PI / 2;
-
-      path(g, [[-0.24, 0.70, 0.05], [-0.10, 0.48, 0.26], [0.14, 0.54, 0.36]], 0.068, 0.048, childSkin);
-      path(g, [[0.24, 0.70, 0.05], [0.26, 0.40, 0.26], [0.16, 0.24, 0.36]], 0.068, 0.048, childSkin);
-      ring(g, 0.060, 0.012, [0.14, 0.54, 0.36], sareeGoldBorder);
-      ring(g, 0.060, 0.012, [0.16, 0.24, 0.36], sareeGoldBorder);
-
       return {
         group: g,
-        staff, head,
+        staff,
+        head,
         update(t, local) { head.rotation.y = Math.sin(t * 0.6) * 0.06; }
       };
     }
@@ -1689,7 +1379,7 @@ export function createWorld(canvas) {
   }
 
   for (let i=0; i<4; i++) {
-    const idol = ganesha(roots[9]);
+    const idol = ganesha(roots[10]);
     idol.position.set((i<2?-1:1)*(4+(i%2)*3), -1.4, -3-(i%2)*3);
     idol.scale.setScalar(.45+(i%2)*.12);
     idol.rotation.y = (i<2?1:-1)*.22;

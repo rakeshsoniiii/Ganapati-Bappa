@@ -169,7 +169,7 @@ function createAudio() {
     beat++;
     // Original pentatonic melody with a quieter low register beneath the sea.
     const melody = [0, 4, 7, 9, 7, 4, 2, 0, 4, 7, 12, 9, 7, 4, 2, -3];
-    if (lastIndex !== 4 && beat % 2 === 0) {
+    if (lastIndex !== 4 && lastIndex !== 9 && beat % 2 === 0) {
       const frequency = (lastIndex === 10 ? 130.81 : 261.63) * 2 ** (melody[(beat/2)%melody.length]/12);
       tone(frequency, audio.currentTime, 1.7, .035, 'sine');
       tone(frequency*2, audio.currentTime+.04, 1.2, .008, 'sine');
