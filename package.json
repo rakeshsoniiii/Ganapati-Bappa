@@ -1,0 +1,16 @@
+{
+  "name": "ganapati-bappa",
+  "version": "1.0.0",
+  "description": "GANAPATI — The Beginning of Everything cinematic 3D experience",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node check.mjs"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["threejs", "ganesh", "webgl"],
+  "author": "Nexis Solutions",
+  "license": "MIT"
+}
