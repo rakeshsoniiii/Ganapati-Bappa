@@ -26,8 +26,9 @@ const MIME_TYPES = {
   '.ttf': 'font/ttf'
 };
 
-const server = http.createServer((req, res) => {
+function handleRequest(req, res) {
   let reqPath = decodeURI(req.url.split('?')[0]);
+  console.log(`[REQ] ${req.method} ${req.url}`);
   if (reqPath === '/' || reqPath === '') {
     reqPath = '/index.html';
   }
@@ -52,14 +53,21 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, {
       'Content-Type': contentType,
       'Content-Length': stats.size,
-      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000'
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
     });
 
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
   });
-});
+}
 
+const server = http.createServer(handleRequest);
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Ganapati project server listening on http://0.0.0.0:${PORT}`);
 });
+
+const server3001 = http.createServer(handleRequest);
+server3001.listen(3001, '0.0.0.0', () => {
+  console.log(`Ganapati project server also listening on http://0.0.0.0:3001`);
+});
+
