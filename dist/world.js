@@ -294,6 +294,97 @@ export function createWorld(canvas) {
     }
   }
 
+  // STL carries shape only. Spatial paint masks supply a restrained devotional palette.
+  // ponytail: these masks approximate garment boundaries; authored UV textures replace them for close-up film work.
+  function paintDeity(geo, kind, axis = 'y') {
+    geo.computeBoundingBox();
+    const bb = geo.boundingBox, attr = geo.attributes.position;
+    const height = bb.max[axis]-bb.min[axis], width = bb.max.x-bb.min.x;
+    const centerX = (bb.max.x+bb.min.x)/2;
+    // Palette: [skin/body, garment/cloth, dark accent]
+    const palette = {
+      shiva:        [0x4a8fd4, 0xd4882a, 0x1a1e28],
+      parvati:      [0xe8c4a0, 0xc8182e, 0x1a0c10],  // warmer wheat, true vermillion saree
+      shakti:       [0xe8c4a0, 0xaa0e1c, 0x280810],
+      child:        [0xf5d8a8, 0xc88a10, 0x28180c],  // ivory-cream skin, marigold dhoti
+      headless:     [0xf5d8a8, 0xc88a10, 0x28180c],
+      ganesha:      [0xd4906a, 0xc01c2c, 0x3a1820],
+      elephantHead: [0x9aaab8, 0xd09080, 0x1c1418],  // divine blue-grey, rose-blush ears
+      elephant:     [0x8898a8, 0xd09070, 0x1c1a18],  // richer grey, vivid warm ears
+      mushaka:      [0x9a6840, 0xf5e5c8, 0x1e100a],  // richer chestnut, bright cream belly
+    }[kind];
+    const colors = palette.map(c=>new T.Color(c));
+    const goldColor    = new T.Color(0xe0a830);   // warm temple gold
+    const silverColor  = new T.Color(0xd8eaf8);   // cool crescent silver
+    const out = new Float32Array(attr.count*3);
+    for (let i=0;i<attr.count;i++) {
+      const h = ((axis==='z'?attr.getZ(i):attr.getY(i))-bb.min[axis])/height*(kind==='headless'?.72:1);
+      const signedX = (attr.getX(i)-centerX)/width, x = Math.abs(signedX);
+      const depthValue = axis==='z'?-attr.getY(i):attr.getZ(i);
+      const front = axis==='z' ? depthValue > -(bb.min.y+bb.max.y)/2 : depthValue > (bb.min.z+bb.max.z)/2;
+      let c=colors[0].clone();
+      if (kind==='parvati'||kind==='shakti') {
+        // Saree covers hips-to-shoulder, blouse at chest, gold crown zone
+        const hem      = 0.10 + 0.02*Math.cos(signedX*12);
+        const neckline = 0.68 + signedX*0.20;
+        const halfW    = (kind==='parvati') ? 0.24+Math.max(0,0.55-h)*0.48 : 0.14+Math.max(0,0.60-h)*0.32;
+        if (h>hem && h<neckline && x<halfW)          c=colors[1].clone();
+        if (h>0.62 && h<0.82 && x>0.14 && x<0.28)  c=colors[2].clone(); // blouse band
+        if (h>0.88 && x<0.26)                        c=goldColor.clone(); // crown
+      } else if(kind==='elephantHead') {
+        // Ear flush: warm rose on wide outer ear, shadow under eye ridge
+        const earZone = T.MathUtils.smoothstep(x,0.30,0.46)*(1-T.MathUtils.smoothstep(h,0.60,0.78))*T.MathUtils.smoothstep(h,0.35,0.52);
+        const eyeRidge= T.MathUtils.smoothstep(h,0.70,0.80)*(1-T.MathUtils.smoothstep(x,0.0,0.18));
+        c=colors[0].clone().lerp(colors[1],front?earZone*0.5:0).lerp(colors[2],eyeRidge*0.6);
+        if (h>0.90) c=goldColor.clone(); // gold crown/matha
+      } else if(kind==='elephant') {
+        const earTint = T.MathUtils.smoothstep(x,0.28,0.44)*(1-T.MathUtils.smoothstep(h,0.62,0.80))*T.MathUtils.smoothstep(h,0.36,0.52);
+        c=colors[0].clone().lerp(colors[1],front?earTint*0.42:0);
+      } else if(kind==='mushaka') {
+        // Belly lighter towards front, dark shadow on back/top
+        const belly = front ? T.MathUtils.smoothstep(h,0.0,0.35)*(1-T.MathUtils.smoothstep(x,0.0,0.22)) : 0;
+        const shadow = (1-front) ? 0.3 : 0;
+        c=colors[0].clone().lerp(colors[1],belly*0.55).lerp(colors[2],shadow);
+      } else if(kind==='shiva') {
+        // Dhoti from hips down, dark waistband, gold jata-crown above shoulders
+        const hem = 0.20+0.08*(1-Math.min(1,x/0.22));
+        if (h>hem && h<0.44 && x<0.30)               c=colors[1].clone(); // saffron dhoti
+        if (h>0.88 || (h>0.66&&h<0.88&&x>0.11&&x<0.25)) c=colors[2].clone(); // dark marks
+        if (signedX<-0.38) c=goldColor.clone(); // trishul/weapon side
+        if (h>0.91) c=silverColor.clone(); // top of Jata = silver-white ash
+      } else {
+        // child / headless / ganesha
+        const hem = 0.11+0.03*Math.cos(signedX*14);
+        if (h>hem && h<0.44-0.04*x && x<(h<0.32?0.44:0.28)) c=colors[1].clone();
+        if ((kind==='child'||kind==='headless') && h>0.88) c=colors[2].clone();
+        if (kind==='ganesha' && h>0.84 && x<0.26) c=goldColor.clone();
+      }
+      c.toArray(out,i*3);
+    }
+    geo.setAttribute('color',new T.BufferAttribute(out,3));
+    return new T.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.68,
+      metalness: 0.06,
+      side: T.DoubleSide,
+      envMapIntensity: 0.8
+    });
+  }
+
+  const detailLoads = new Map();
+  function addDetail(file, height, parent, kind, material) {
+    if(!detailLoads.has(file)) detailLoads.set(file,new STLLoader().loadAsync('./assets/'+file).then(geo=>{
+      geo.deleteAttribute('normal'); geo=mergeVertices(geo,.00001); geo.computeVertexNormals();
+      geo.rotateX(-Math.PI/2); geo.center(); geo.computeBoundingBox();
+      return geo;
+    }));
+    detailLoads.get(file).then(source=>{
+      const geo=source.clone(), size=new T.Vector3(); source.boundingBox.getSize(size);
+      geo.scale(height/size.y,height/size.y,height/size.y); geo.translate(0,height/2,0);
+      parent.add(new T.Mesh(geo,kind?paintDeity(geo,kind):material));
+    }).catch(error=>console.error('Could not load '+file,error));
+  }
+
   // ─── GANESHA SCULPTURE ───
   const sculptureHolders = [];
   let rebirthDust, farewellDust;
@@ -318,14 +409,7 @@ export function createWorld(canvas) {
     geometry.scale(5.2 / size.y, 5.2 / size.y, 5.2 / size.y);
     geometry.translate(0, 0.88, 0);
 
-    // Vivid saffron-gold for Ganesha sculpture — sacred murthi tone
-    const ganeshaMat = new T.MeshStandardMaterial({
-      color: 0xf0a020,
-      metalness: 0.72,
-      roughness: 0.28,
-      emissive: 0x6a2a00,
-      emissiveIntensity: 0.22
-    });
+    const ganeshaMat = paintDeity(geometry, 'ganesha');
     for (const holder of sculptureHolders) {
       mesh(geometry, ganeshaMat, holder);
     }
@@ -411,15 +495,7 @@ export function createWorld(canvas) {
       const centreY = (bb.max.y + bb.min.y) / 2;
       geo.translate(-centreX, -centreY, -bb.min.z);
 
-      const bodyMesh = new T.Mesh(geo, new T.MeshStandardMaterial({
-        color: 0xe8724a,        // rich saffron-rose — Chola bronze warmth
-        metalness: 0.14,
-        roughness: 0.52,
-        emissive: 0x6a1800,
-        emissiveIntensity: 0.18,
-        side: T.DoubleSide,
-        envMapIntensity: 1.0
-      }));
+      const bodyMesh = new T.Mesh(geo, paintDeity(geo, 'parvati', 'z'));
       bodyMesh.scale.setScalar(fitScale);
       // STL exported Z-up: rotate -90° on X to stand upright, then face camera (+Z)
       bodyMesh.rotation.x = -Math.PI / 2;
@@ -468,13 +544,11 @@ export function createWorld(canvas) {
     leftArm.position.set(-0.51, 1.65, 0.04);
     g.add(leftArm);
 
-    // Trishul removed from scene — Shiva's presence conveyed through STL model and halo
-    const shivaTrishul = new T.Group();
-    g.add(shivaTrishul);
-    shivaTrishul.visible = false;
-    // Damru stub — kept so animation code referencing damru.rotation.y still works
-    const damru = new T.Group();
-    shivaTrishul.add(damru);
+    const shivaTrishul = new T.Group(); g.add(shivaTrishul);
+    shivaTrishul.position.set(1.3,-1.3,.4);
+    const damru = new T.Group(); shivaTrishul.add(damru);
+    // The actor scan already includes a trident; the separate mesh is reserved for flight.
+    shivaTrishul.visible=false;
 
     // Load the high-quality STL body
     const stlLoader = new STLLoader();
@@ -489,15 +563,7 @@ export function createWorld(canvas) {
       const centreY = (bb.max.y + bb.min.y) / 2;
       geo.translate(-centreX, -centreY, -bb.min.z);
 
-      const bodyMesh = new T.Mesh(geo, new T.MeshStandardMaterial({
-        color: 0x3a78c4,        // vivid Neelkantha cobalt-blue — traditional Shiva complexion
-        metalness: 0.16,
-        roughness: 0.50,
-        emissive: 0x001a5a,
-        emissiveIntensity: 0.22,
-        side: T.DoubleSide,
-        envMapIntensity: 1.0
-      }));
+      const bodyMesh = new T.Mesh(geo, paintDeity(geo, 'shiva', 'z'));
       bodyMesh.scale.setScalar(fitScale);
       // STL exported Z-up: rotate -90° on X to stand upright, then face camera (+Z)
       bodyMesh.rotation.x = -Math.PI / 2;
@@ -574,15 +640,7 @@ export function createWorld(canvas) {
         geo.translate(-centreX, -bb.min.y, -centreZ);
       }
 
-      const bodyMesh = new T.Mesh(geo, new T.MeshStandardMaterial({
-        color: 0xd42020,        // fierce crimson-scarlet — Adi Parashakti cosmic rage
-        metalness: 0.20,
-        roughness: 0.45,
-        emissive: 0x7a0000,
-        emissiveIntensity: 0.30,
-        side: T.DoubleSide,
-        envMapIntensity: 1.0
-      }));
+      const bodyMesh = new T.Mesh(geo, paintDeity(geo, 'shakti', useZUp ? 'z' : 'y'));
       bodyMesh.scale.setScalar(fitScale);
       if (useZUp) bodyMesh.rotation.x = -Math.PI / 2;
       bodyMesh.position.y = -2.0;
@@ -603,19 +661,15 @@ export function createWorld(canvas) {
     };
   }
 
-  // ─── CHILD GANESHA (STL — HUMAN HEAD GANESHA, CHAPTERS 1 & 2) ───
-  // STL is loaded ONCE and shared across all instances (creation, guardian, battle, rebirth).
-  const childGaneshaHolders = []; // { head, mode, scale }
-
-  // Sacred golden material — vivid saffron-ochre divine child tone
-  const childGaneshaMat = new T.MeshStandardMaterial({
-    color: 0xf0a020,
-    metalness: 0.72,
-    roughness: 0.28,
-    emissive: 0x6a2a00,
-    emissiveIntensity: 0.22,
-    side: T.DoubleSide
-  });
+  // ─── CHILD GANESHA — Story-accurate model selection ───
+  //
+  // ACT I  (Ch01 Creation) — Human Head Ganesha.stl  : Parvati sculpts a human child
+  // ACT II (Ch02 Promise)  — Human Head Ganesha.stl  : young human Ganesha stands guard
+  // ACT III(Ch04 Battle)   — Human Head Ganesha.stl  : head group hidden on decapitation
+  // ACT VI (Ch07 Rebirth)  — headless body + elephant head separately (handled in Ch07 section)
+  //
+  // The STL is split at a Y cut-plane so 'head' and 'body' remain animatable independently.
+  const childGaneshaHolders = []; // { head, body, mode }
 
   new STLLoader().load('./assets/Human Head Ganesha.stl', (geo) => {
     geo.deleteAttribute('normal');
@@ -627,17 +681,40 @@ export function createWorld(canvas) {
     const size = new T.Vector3();
     geo.boundingBox.getSize(size);
 
-    for (const { head, mode } of childGaneshaHolders) {
-      const clonedGeo = geo.clone();
+    for (const { head, body, mode } of childGaneshaHolders) {
+      const cloned = geo.clone();
       const fitH = mode === 'creation' ? 3.2 : 3.8;
-      const fitScale = fitH / size.y;
-      clonedGeo.scale(fitScale, fitScale, fitScale);
-      clonedGeo.translate(0, 0.15, 0);
-      head.add(new T.Mesh(clonedGeo, childGaneshaMat));
+      const s = fitH / size.y;
+      cloned.scale(s, s, s);
+      cloned.translate(0, fitH * 0.5, 0);   // floor geometry at y=0
+
+      // Split into head (above cut) and body (below cut) for independent animation
+      const mat = paintDeity(cloned, 'child');
+      const posAttr = cloned.attributes.position;
+      const idxArr  = cloned.index ? cloned.index.array : null;
+
+      if (idxArr) {
+        const cutY = fitH * 0.70;  // neck cut at 70% height
+        const headIdx = [], bodyIdx = [];
+        for (let i = 0; i < idxArr.length; i += 3) {
+          const ay = posAttr.getY(idxArr[i]);
+          const by = posAttr.getY(idxArr[i+1]);
+          const cy = posAttr.getY(idxArr[i+2]);
+          const midY = (ay + by + cy) / 3;
+          (midY > cutY ? headIdx : bodyIdx).push(idxArr[i], idxArr[i+1], idxArr[i+2]);
+        }
+        const headGeo = cloned.clone(); headGeo.setIndex(headIdx);
+        const bodyGeo = cloned.clone(); bodyGeo.setIndex(bodyIdx);
+        headGeo.computeBoundingBox();
+        bodyGeo.computeBoundingBox();
+        head.add(new T.Mesh(headGeo, mat));
+        body.add(new T.Mesh(bodyGeo, mat));
+      } else {
+        // Non-indexed: add whole mesh to body, head stays empty (safe fallback)
+        body.add(new T.Mesh(cloned, mat));
+      }
     }
-  }, undefined, (err) => {
-    console.warn('Human Head Ganesha STL failed to load', err);
-  });
+  }, undefined, err => console.warn('Human Head Ganesha STL failed to load', err));
 
   function createChildGanesha(parent, options = {}) {
     const { mode = 'creation', pos = [0, 0, 0], scale = 1, rotY = 0 } = options;
@@ -647,7 +724,7 @@ export function createWorld(canvas) {
     g.rotation.y = rotY;
     parent.add(g);
 
-    // Blooming Golden Lotus Pedestal (Padmapitha) — shared by both modes
+    // Blooming Golden Lotus Pedestal (Padmapitha)
     lathe(g, [[0, -0.2], [0.68, -0.2], [0.74, -0.1], [0.62, 0.0], [0, 0.0]], darkGold);
     for (let i = 0; i < 14; i++) {
       const a = i / 14 * Math.PI * 2;
@@ -656,41 +733,47 @@ export function createWorld(canvas) {
       pet.rotation.x = -0.25;
     }
 
-    // Tiny heart-center orb — kept for animation reference but invisible (STL provides the body)
-    const heartGlow = ell(g, [0, 0.72, 0.24], [0.06, 0.06, 0.04], warmGlow);
-    heartGlow.visible = false;
+    // No sphere heartGlow — divine light comes from prana particles instead
+    const heartGlow = { visible: false, scale: { setScalar: () => {} } }; // stub so update() refs don't break
 
-    // Head group anchor — STL body gets added here once loaded
+    // Body group — lower half of Human Head Ganesha STL
+    const body = new T.Group();
+    g.add(body);
+
+    // Head group — upper half of Human Head Ganesha STL; animated independently in Ch04
     const head = new T.Group();
     g.add(head);
-    childGaneshaHolders.push({ head, mode });
 
-    // Guardian Staff — hidden, STL model provides the full figure
+    childGaneshaHolders.push({ head, body, mode });
+
+    // Guardian staff (shown in Ch02 & Ch04 sentinel mode)
     const staff = new T.Group();
-    staff.position.set(0.15, 0.35, 0.36);
+    staff.position.set(0.22, 0.4, 0.38);
     g.add(staff);
-    mesh(new T.CylinderGeometry(0.042, 0.052, 3.4, 16), treeBark, staff, [0, 0, 0]);
+    mesh(new T.CylinderGeometry(0.042, 0.052, 3.4, 16), treeBark, staff);
     mesh(new T.ConeGeometry(0.12, 0.36, 14), sareeGoldBorder, staff, [0, 1.8, 0]);
     ring(staff, 0.080, 0.018, [0, 1.6, 0], sareeGoldBorder).rotation.x = Math.PI / 2;
     ring(staff, 0.075, 0.016, [0, -1.6, 0], antiqueBronze).rotation.x = Math.PI / 2;
-    staff.visible = false;
+    staff.visible = mode !== 'creation';
 
     if (mode === 'creation') {
       return {
-        group: g,
-        heartGlow,
+        group: g, heartGlow, head, body,
         update(t, local) {
-          const pulse = Math.sin(t * 3.5) * 0.03;
-          g.scale.set(scale * (1 + pulse), scale * (1 + pulse * 1.5), scale * (1 + pulse));
+          const pulse = Math.sin(t * 3.5) * 0.025;
+          g.scale.set(scale * (1 + pulse), scale * (1 + pulse * 1.4), scale * (1 + pulse));
           heartGlow.scale.setScalar(0.8 + Math.sin(t * 4.0) * 0.3);
+          heartGlow.visible = local < 0.75;
+          // Gentle head sway — child looks curiously at mother
+          head.rotation.y = Math.sin(t * 0.5) * 0.08;
         }
       };
     } else {
       return {
-        group: g,
-        staff,
-        head,
-        update(t, local) { head.rotation.y = Math.sin(t * 0.6) * 0.06; }
+        group: g, staff, head, body,
+        update(t, local) {
+          head.rotation.y = Math.sin(t * 0.6) * 0.06;
+        }
       };
     }
   }
@@ -755,44 +838,155 @@ export function createWorld(canvas) {
   // Child Ganesha seated on golden lotus pedestal
   const childCh1 = createChildGanesha(roots[1], { mode: 'creation', pos: [1.2, -1.0, 0], scale: 1.15, rotY: -0.35 });
 
-  // Swirling Golden Prana Particles (flowing from Parvati's hands to Child Ganesha's heart)
-  const pranaCount = 180;
+  // ── DIVINE PRANA SPARKS — flow from Maa Parvati's hands to Ganesha's heart ──
+  // Three streams: main arc, fine glitter, and a heart-glow bloom at the destination.
+  //
+  // World positions (roots[1] local space):
+  //   Parvati right hand : approx (-0.65, 0.55, 0.3)  — her outstretched palm
+  //   Ganesha heart      : approx ( 1.20, 1.10, 0.2)  — centre of his chest
+  //
+  // The Bezier control point lifts into an arc above them for a magical, cinematic feel.
+
+  // — Stream 1: main golden arc (240 particles, large, slow) —
+  const pranaCount = 240;
   const pranaGeo = new T.BufferGeometry();
-  const pranaPos = new Float32Array(pranaCount * 3), pranaSeed = new Float32Array(pranaCount);
+  const pranaPos  = new Float32Array(pranaCount * 3);
+  const pranaSeed = new Float32Array(pranaCount);
   for (let i = 0; i < pranaCount; i++) {
-    pranaPos[i * 3] = -1.0 + Math.random() * 2.2;
-    pranaPos[i * 3 + 1] = Math.random() * 1.5;
-    pranaPos[i * 3 + 2] = (Math.random() - 0.5) * 0.8;
-    pranaSeed[i] = Math.random();
+    pranaSeed[i] = i / pranaCount;   // evenly spaced so stream is continuous
   }
-  pranaGeo.setAttribute('position', new T.BufferAttribute(pranaPos, 3));
-  pranaGeo.setAttribute('seed', new T.BufferAttribute(pranaSeed, 1));
+  pranaGeo.setAttribute('position', new T.BufferAttribute(pranaPos,  3));
+  pranaGeo.setAttribute('seed',     new T.BufferAttribute(pranaSeed, 1));
+
   const pranaMat = new T.ShaderMaterial({
     transparent: true, depthWrite: false, blending: T.AdditiveBlending,
     uniforms: { time: { value: 0 } },
-    vertexShader: `uniform float time; attribute float seed; varying float a;
-      void main(){
-        float t = mod(seed + time * 0.35, 1.0);
-        vec3 p0 = vec3(-1.0, 0.4, 0.5);
-        vec3 p1 = vec3(0.0, 0.9, 0.6);
-        vec3 p2 = vec3(1.2, -0.2, 0.3);
-        vec3 p = mix(mix(p0, p1, t), mix(p1, p2, t), t);
-        p.y += sin(time * 3.0 + seed * 20.0) * 0.12;
-        p.z += cos(time * 2.5 + seed * 15.0) * 0.15;
+    vertexShader: `
+      uniform float time;
+      attribute float seed;
+      varying  float vLife;
+      void main() {
+        // t cycles 0→1 along the arc, offset per particle so stream is continuous
+        float t = fract(seed + time * 0.28);
+
+        // Quadratic Bezier: hand → lifted control → heart
+        vec3 p0 = vec3(-0.65, 0.55, 0.30);   // Maa's right palm
+        vec3 p1 = vec3( 0.30, 2.10, 0.60);   // lifted divine arc apex
+        vec3 p2 = vec3( 1.20, 1.10, 0.20);   // Ganesha's heart
+
+        vec3 pa = mix(p0, p1, t);
+        vec3 pb = mix(p1, p2, t);
+        vec3 p  = mix(pa, pb, t);
+
+        // Gentle organic wobble around the arc
+        float wobble = sin(seed * 47.3 + time * 2.8) * 0.055;
+        p.x += wobble;
+        p.y += cos(seed * 31.7 + time * 2.2) * 0.040;
+        p.z += sin(seed * 19.1 + time * 3.1) * 0.045;
+
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
-        gl_PointSize = clamp((24.0 + seed * 20.0) / -mv.z, 1.5, 6.0);
-        a = sin(t * 3.14159) * (0.6 + seed * 0.4);
+
+        // Particles are brightest near the middle of the arc, fade at ends
+        vLife = sin(t * 3.14159);
+        float sz = 3.5 + seed * 9.0 + vLife * 8.0;
+        gl_PointSize = clamp(sz / -mv.z, 1.5, 14.0);
       }`,
-    fragmentShader: `varying float a; void main(){
+    fragmentShader: `
+      varying float vLife;
+      void main() {
         float d = length(gl_PointCoord - 0.5);
         if (d > 0.5) discard;
-        vec3 col = mix(vec3(1.0, 0.88, 0.45), vec3(1.0, 0.55, 0.15), d * 2.0);
-        gl_FragColor = vec4(col, (1.0 - d * 2.0) * a);
+        // Core white → warm gold → deep orange at edge
+        vec3 inner = vec3(1.00, 0.97, 0.85);
+        vec3 mid   = vec3(1.00, 0.82, 0.30);
+        vec3 outer = vec3(0.95, 0.42, 0.06);
+        float r = d * 2.0;
+        vec3 col = mix(inner, mix(mid, outer, r), r);
+        float a = (1.0 - smoothstep(0.05, 0.50, d)) * vLife * 0.92;
+        gl_FragColor = vec4(col, a);
       }`
   });
   const pranaParticles = new T.Points(pranaGeo, pranaMat);
   roots[1].add(pranaParticles);
+
+  // — Stream 2: fine glitter (400 tiny fast sparks, tight around the arc) —
+  const glitterCount = 400;
+  const glitterGeo  = new T.BufferGeometry();
+  const glitterSeed = new Float32Array(glitterCount);
+  for (let i = 0; i < glitterCount; i++) glitterSeed[i] = Math.random();
+  glitterGeo.setAttribute('seed', new T.BufferAttribute(glitterSeed, 1));
+  // position attribute is required even if unused (WebGL demands it)
+  glitterGeo.setAttribute('position', new T.BufferAttribute(new Float32Array(glitterCount * 3), 3));
+
+  const glitterMat = new T.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
+    uniforms: { time: { value: 0 } },
+    vertexShader: `
+      uniform float time;
+      attribute float seed;
+      varying  float vA;
+      void main() {
+        float t = fract(seed + time * 0.55);   // faster stream
+
+        vec3 p0 = vec3(-0.65, 0.55, 0.30);
+        vec3 p1 = vec3( 0.30, 2.10, 0.60);
+        vec3 p2 = vec3( 1.20, 1.10, 0.20);
+        vec3 pa = mix(p0, p1, t);
+        vec3 pb = mix(p1, p2, t);
+        vec3 p  = mix(pa, pb, t);
+
+        // Wider scatter so they look like escaping sparks
+        float scatter = sin(seed * 73.1 + time * 5.2) * 0.14;
+        p.x += scatter;
+        p.y += cos(seed * 53.7 + time * 4.8) * 0.10;
+        p.z += sin(seed * 41.9 + time * 6.0) * 0.10;
+
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        vA = sin(t * 3.14159) * (0.5 + seed * 0.5);
+        gl_PointSize = clamp((1.8 + seed * 3.5) / -mv.z, 1.0, 5.0);
+      }`,
+    fragmentShader: `
+      varying float vA;
+      void main() {
+        float d = length(gl_PointCoord - 0.5);
+        if (d > 0.5) discard;
+        vec3 col = mix(vec3(1.0, 1.0, 0.9), vec3(1.0, 0.6, 0.1), d * 2.0);
+        gl_FragColor = vec4(col, (1.0 - d * 2.0) * vA * 0.7);
+      }`
+  });
+  const glitterParticles = new T.Points(glitterGeo, glitterMat);
+  roots[1].add(glitterParticles);
+
+  // — Bloom 3: radiant glow at Ganesha's heart (single large soft disc) —
+  const heartBloomMat = new T.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
+    uniforms: { time: { value: 0 } },
+    vertexShader: `
+      uniform float time;
+      void main() {
+        vec3 p = vec3(1.20, 1.10, 0.20);
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        float pulse = 0.7 + 0.3 * sin(time * 3.5);
+        gl_PointSize = clamp(55.0 * pulse / -mv.z, 8.0, 72.0);
+      }`,
+    fragmentShader: `
+      uniform float time;
+      void main() {
+        float d = length(gl_PointCoord - 0.5);
+        if (d > 0.5) discard;
+        float pulse = 0.7 + 0.3 * sin(time * 3.5);
+        float a = (1.0 - smoothstep(0.0, 0.50, d)) * pulse * 0.55;
+        vec3 col = mix(vec3(1.0, 0.97, 0.80), vec3(1.0, 0.65, 0.12), d * 2.5);
+        gl_FragColor = vec4(col, a);
+      }`
+  });
+  const heartBloomGeo = new T.BufferGeometry();
+  heartBloomGeo.setAttribute('position', new T.BufferAttribute(new Float32Array([0,0,0]), 3));
+  const heartBloom = new T.Points(heartBloomGeo, heartBloomMat);
+  roots[1].add(heartBloom);
 
   // Procedural jagged Himalayan mountains with snow caps
   function createMountain(segments = 16, height = 18, baseR = 7.0) {
@@ -850,8 +1044,8 @@ export function createWorld(canvas) {
     }
   }
 
-  // Brave Young Ganesha standing sentinel with wooden guardian staff
-  const guardianCh2 = createChildGanesha(roots[2], { mode: 'guardian', pos: [0, -0.8, -3.8], scale: 1.25 });
+  // Brave Young Ganesha standing sentinel at the gate — raised y so feet land on floor
+  const guardianCh2 = createChildGanesha(roots[2], { mode: 'guardian', pos: [0, -0.15, -3.8], scale: 1.25 });
 
   // ─── CH 3: SHIVA RETURNS — LORD SHIVA'S MAJESTIC ARRIVAL ───
   // Lord Shiva in ascetic grandeur with Jata, crescent Chandra, glowing Third Eye, Vasuki, Trishul & Damru
@@ -905,10 +1099,144 @@ export function createWorld(canvas) {
   const guardianCh4 = createChildGanesha(battle, { mode: 'guardian', pos: [-2.2, -0.8, 0], scale: 1.15, rotY: 0.5 });
   const shivaCh4 = createShiva(battle, { mode: 'battle', pos: [2.2, -0.4, -0.8], scale: 1.25, rotY: -0.5 });
 
-  const flyingTrishul = shivaCh4.trishul.clone();
-  flyingTrishul.scale.setScalar(0.6);
-  flyingTrishul.rotation.z = Math.PI / 2;
+  const flyingTrishul = new T.Group();
+  // Polished divine silver-gold — blindingly hot, like a divine weapon should look
+  const trishulMat = new T.MeshStandardMaterial({
+    color: 0xf0e0b0, metalness: 0.98, roughness: 0.06,
+    emissive: 0xffaa00, emissiveIntensity: 0.80
+  });
+  addDetail('Trishul.stl', 4, flyingTrishul, null, trishulMat);
   battle.add(flyingTrishul);
+
+  // ── TRISHUL FIRE TRAIL — elongated streaks behind the prongs ──
+  // Two layers: large glowing blobs (motion blur feel) + fine electric sparks
+  const trailCount = 280;
+  const trailGeo = new T.BufferGeometry();
+  const trailPos   = new Float32Array(trailCount * 3);
+  const trailAge   = new Float32Array(trailCount);
+  const trailLayer = new Float32Array(trailCount); // 0=blob, 1=spark
+  for (let i = 0; i < trailCount; i++) {
+    trailAge[i]   = 1.0;   // start dead/invisible
+    trailLayer[i] = i < 140 ? 0 : 1;
+  }
+  trailGeo.setAttribute('position', new T.BufferAttribute(trailPos,   3));
+  trailGeo.setAttribute('age',      new T.BufferAttribute(trailAge,   1));
+  trailGeo.setAttribute('layer',    new T.BufferAttribute(trailLayer, 1));
+
+  const trailMat = new T.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
+    uniforms: { speed: { value: 0.0 } },   // 0=slow  1=fast — drives streak length
+    vertexShader: `
+      attribute float age;
+      attribute float layer;
+      uniform   float speed;
+      varying   float vAge;
+      varying   float vLayer;
+      void main(){
+        vAge   = age;
+        vLayer = layer;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mv;
+        float alive = 1.0 - age;
+        // Blobs large, sparks small
+        float baseSize = (layer < 0.5) ? (28.0 + speed * 55.0) : (6.0 + speed * 12.0);
+        gl_PointSize = clamp(baseSize * alive * alive / -mv.z, 1.0, 60.0);
+      }`,
+    fragmentShader: `
+      varying float vAge;
+      varying float vLayer;
+      void main(){
+        vec2  uv = gl_PointCoord - 0.5;
+        float d  = length(uv);
+        if (d > 0.5) discard;
+
+        float alive = 1.0 - vAge;
+        float a;
+        vec3  col;
+
+        if (vLayer < 0.5) {
+          // Blob: soft radial glow, white-hot core fading to orange
+          a   = (1.0 - smoothstep(0.0, 0.50, d)) * alive * alive * 0.85;
+          col = mix(vec3(1.0, 0.97, 0.88), vec3(1.0, 0.45, 0.02), d * 2.2);
+        } else {
+          // Spark: sharp bright streak dot
+          a   = (1.0 - smoothstep(0.0, 0.28, d)) * alive * 0.95;
+          col = mix(vec3(1.0, 1.0, 0.9), vec3(0.8, 0.3, 0.0), vAge * 1.5);
+        }
+        gl_FragColor = vec4(col, a);
+      }`
+  });
+  const trishulTrail = new T.Points(trailGeo, trailMat);
+  battle.add(trishulTrail);
+  let trailHead = 0;
+
+  // ── DIVINE CORONA — crackling energy rings around the Trishul in flight ──
+  const coronaMat = new T.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
+    side: T.DoubleSide,
+    uniforms: { time: { value: 0 }, flight: { value: 0 } },
+    vertexShader: `
+      uniform float time, flight;
+      varying float vT;
+      void main(){
+        // Expand ring outward with time, pulsate
+        float r = 0.55 + 0.18 * sin(time * 12.0) + flight * 0.35;
+        float a = position.x * 3.14159 * 2.0;
+        vec3 p = vec3(cos(a) * r, sin(a) * r, position.y * 0.12);
+        vT = position.x;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+      }`,
+    fragmentShader: `
+      uniform float time, flight;
+      varying float vT;
+      void main(){
+        float pulse = 0.5 + 0.5 * sin(vT * 28.0 + time * 18.0);
+        float a = pulse * flight * 0.75;
+        vec3 col = mix(vec3(0.4, 0.8, 1.0), vec3(1.0, 0.6, 0.0), pulse);
+        gl_FragColor = vec4(col, a);
+      }`
+  });
+  // Simple ring geometry (line strip via thin tube of points)
+  const coronaRingCount = 80;
+  const cPos = new Float32Array(coronaRingCount * 3);
+  for (let i = 0; i < coronaRingCount; i++) {
+    cPos[i*3]   = i / coronaRingCount;  // x=t 0..1 (used as angle in shader)
+    cPos[i*3+1] = (i % 3) * 0.33 - 0.33;  // y offset for 3 stacked rings
+    cPos[i*3+2] = 0;
+  }
+  const coronaGeo = new T.BufferGeometry();
+  coronaGeo.setAttribute('position', new T.BufferAttribute(cPos, 3));
+  const coronaMesh = new T.Points(coronaGeo, coronaMat);
+  flyingTrishul.add(coronaMesh);  // attached to Trishul so it follows automatically
+
+  // ── IMPACT SHOCKWAVE — screen-space fullscreen quad ──
+  const shockwaveMat = new T.ShaderMaterial({
+    transparent: true, depthWrite: false, depthTest: false,
+    uniforms: { impact: { value: 0.0 } },
+    vertexShader: `void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+    fragmentShader: `
+      uniform float impact;
+      void main(){
+        // Radial vignette that punches white then recedes
+        float ring = smoothstep(0.0, 0.35, impact) * (1.0 - smoothstep(0.35, 1.0, impact));
+        vec3 col = mix(vec3(1.0, 0.7, 0.3), vec3(1.0, 1.0, 0.95), impact);
+        gl_FragColor = vec4(col, ring * 0.82);
+      }`
+  });
+  // Positions span NDC [-1,1] — drawn as two triangles filling the screen
+  const shockwaveGeo = new T.BufferGeometry();
+  shockwaveGeo.setAttribute('position', new T.Float32BufferAttribute([
+    -1,-1,0,  1,-1,0,  1,1,0,  -1,-1,0,  1,1,0,  -1,1,0
+  ], 3));
+  const shockwaveMesh = new T.Mesh(shockwaveGeo, shockwaveMat);
+  shockwaveMesh.frustumCulled = false;
+  shockwaveMesh.renderOrder = 999;   // draw on top of everything
+  scene.add(shockwaveMesh);
+
+  const fallenBody = new T.Group(); battle.add(fallenBody);
+  addDetail('Ganesha headless Body.stl', 2.8, fallenBody, 'headless');
+  fallenBody.position.set(-2.2, -2.2, 0);
+
   const impactLight = new T.PointLight(0xffe5bd, 0, 15);
   impactLight.position.set(-2.2, 0.5, 0);
   battle.add(impactLight);
@@ -929,8 +1257,8 @@ export function createWorld(canvas) {
     geo.computeVertexNormals();
   });
 
-  for (let i = 0; i < 90; i++) {
-    const a = i * 2.399, r = 2.1 + (i % 13) * 0.38;
+  for (let i = 0; i < 18; i++) {
+    const a = i * 2.399, r = 6.5 + (i % 5) * 0.4;
     const rGeo = rockGeos[i % 3];
     const rMat = i % 5 === 0 ? gold : i % 3 === 0 ? stoneGray : obsidian;
     const m = mesh(rGeo, rMat, battle, [Math.cos(a) * r, Math.sin(a) * r, (i % 10) - 5]);
@@ -1103,67 +1431,11 @@ export function createWorld(canvas) {
   const fireflies = new T.Points(fireflyGeo, fireflyMat);
   forest.add(fireflies);
 
-  // Sacred Elephant
+  // Supplied Z-up sculpture, grounded at the forest floor.
   const elephant = new T.Group();
-  elephant.position.set(0.6, 0.2, -3.5);
-  elephant.scale.setScalar(1.15);
+  elephant.position.set(.6,-2.6,-3.5);
   forest.add(elephant);
-
-  ell(elephant, [0, 1.25, 0], [1.75, 1.85, 1.95], elephantSkin);
-  ell(elephant, [-0.65, 2.1, 0.2], [0.85, 0.85, 0.9], elephantSkin);
-  ell(elephant, [0.65, 2.1, 0.2], [0.85, 0.85, 0.9], elephantSkin);
-  ell(elephant, [0, 1.6, 1.0], [1.25, 0.65, 0.7], elephantSkin);
-  ell(elephant, [0, 0.4, -2.8], [2.3, 2.4, 3.4], elephantSkin);
-  for (let w = 0; w < 4; w++) {
-    ring(elephant, 0.9 + w * 0.15, 0.012, [0, 1.8 + w * 0.15, 0.6], elephantSkin).rotation.x = Math.PI / 2.5;
-  }
-
-  for (const s of [-1, 1]) {
-    const earGroup = new T.Group();
-    earGroup.position.set(s * 1.7, 1.2, -0.2);
-    elephant.add(earGroup);
-    const ear = ell(earGroup, [0, 0, 0], [0.15, 1.8, 1.35], elephantSkin);
-    ear.rotation.y = s * 0.42;
-    ear.rotation.z = s * -0.22;
-    ell(earGroup, [s * -0.04, -0.1, 0.04], [0.08, 1.2, 0.85],
-      new T.MeshStandardMaterial({ color: 0x8a6868, roughness: 0.7, metalness: 0.05 }));
-  }
-
-  for (const s of [-1, 1]) {
-    ell(elephant, [s * 0.72, 1.35, 0.85], [0.1, 0.08, 0.08],
-      new T.MeshStandardMaterial({ color: 0x1a1008, roughness: 0.2, metalness: 0.4 }));
-    ell(elephant, [s * 0.72, 1.37, 0.91], [0.035, 0.03, 0.03], warmGlow);
-  }
-
-  for (const s of [-1, 1]) {
-    path(elephant, [
-      [s * 0.60, 0.1, 1.1], [s * 0.78, -0.65, 1.8], [s * 0.92, -0.92, 2.5], [s * 0.82, -0.52, 3.1]
-    ], 0.11, 0.028, elephantIvory);
-    ring(elephant, 0.12, 0.02, [s * 0.75, -0.5, 1.6], gold).rotation.x = Math.PI / 3;
-  }
-
-  path(elephant, [
-    [0, 0.7, 1.6], [0, -0.1, 2.1], [0, -1.1, 2.5], [0.1, -1.9, 2.9],
-    [0, -2.5, 3.4], [-0.12, -2.7, 3.9], [0, -2.3, 4.3]
-  ], 0.42, 0.14, elephantSkin);
-
-  for (const [lx, lz] of [[-1.1, -0.9], [1.1, -0.9], [-1.0, -3.4], [1.0, -3.4]]) {
-    mesh(new T.CylinderGeometry(0.38, 0.46, 3.4, 16), elephantSkin, elephant, [lx, -1.5, lz]);
-  }
-
-  const neti = new T.Group();
-  neti.position.set(0, 1.8, 1.1);
-  elephant.add(neti);
-  for (let row = 0; row < 5; row++) {
-    const yOff = -row * 0.26;
-    const count = 5 - row;
-    for (let c = 0; c < count; c++) {
-      const xOff = (c - (count - 1) / 2) * 0.28;
-      ell(neti, [xOff, yOff, 0.05], [0.09, 0.09, 0.04], gold);
-    }
-  }
-  ell(neti, [0, -1.45, 0.08], [0.12, 0.16, 0.06], rubyGem);
-  halo(elephant, 3.2).position.set(0, 1.3, -0.6);
+  addDetail('baby elephant.stl', 4.8, elephant, 'elephant', null);
 
   // ─── CH 7: REBIRTH — LORD GANESHA REBORN WITH SHIVA & PARVATI BESIDE HIM ───
   const reborn = ganesha(roots[7]);
@@ -1176,18 +1448,12 @@ export function createWorld(canvas) {
   const shivaCh7 = createShiva(roots[7], { mode: 'blessing', pos: [-1.4, -0.4, 0.4], scale: 1.12, rotY: 0.45 });
   const parvatiCh7 = createParvati(roots[7], { mode: 'rebirth_side', pos: [4.6, -0.4, 0.4], scale: 1.08, rotY: -0.45 });
 
-  const restoredChild = createChildGanesha(roots[7], {mode: 'guardian', pos: [1.6,-1.1,0], scale: 1.5});
-  restoredChild.head.visible = false;
-  restoredChild.staff.visible = false;
-  const elephantHead = new T.Group();
-  roots[7].add(elephantHead);
-  ell(elephantHead, [0,0,0], [.46,.52,.4], elephantSkin);
-  for (const side of [-1,1]) {
-    ell(elephantHead, [side*.48,0,-.06], [.3,.48,.1], elephantSkin);
-    ell(elephantHead, [side*.19,.1,.36], [.035,.028,.024], obsidian);
-    path(elephantHead, [[side*.2,-.18,.3],[side*.3,-.42,.5],[side*.26,-.32,.68]], .05,.008,ivory);
-  }
-  path(elephantHead, [[0,-.08,.35],[0,-.45,.5],[0,-.78,.56],[.2,-.9,.6]], .16,.045,elephantSkin);
+  const restoredChild = {group:new T.Group()}; roots[7].add(restoredChild.group);
+  addDetail('Ganesha headless Body.stl', 3.2, restoredChild.group, 'headless');
+
+  const elephantHead = new T.Group(); roots[7].add(elephantHead);
+  // Use paintDeity 'elephantHead' — warm grey divine skin with rose ear-flush and gold crown
+  addDetail('Ganesha Head ( elephent head ).stl', 2.0, elephantHead, 'elephantHead', null);
 
   // Sacred Lotus Flowers at Base
   for (let i = 0; i < 14; i++) {
@@ -1241,19 +1507,11 @@ export function createWorld(canvas) {
     p.rotation.y = -a + Math.PI / 2;
   }
 
-  // Golden Mushaka Figurine
   const mushaka = new T.Group();
-  mushaka.position.set(-1.45, 0.15, 0.6);
-  mushaka.rotation.y = Math.PI / 3;
-  mushaka.scale.setScalar(0.38);
+  mushaka.position.set(-1.3,.13,.3); mushaka.rotation.y = Math.PI/3;
   thali.add(mushaka);
-  ell(mushaka, [0, 0.25, 0], [0.35, 0.32, 0.55], paleGold);
-  ell(mushaka, [0, 0.45, 0.45], [0.22, 0.22, 0.32], paleGold);
-  ell(mushaka, [0, 0.40, 0.72], [0.08, 0.07, 0.14], gold);
-  for (const s of [-1, 1]) {
-    ell(mushaka, [s * 0.22, 0.65, 0.42], [0.12, 0.14, 0.03], gold);
-  }
-  path(mushaka, [[0, 0.15, -0.45], [0.1, 0.25, -0.85], [0, 0.45, -1.2]], 0.035, 0.015, gold);
+  // paintDeity 'mushaka' — warm chestnut fur, cream belly, dark shadow
+  addDetail('Mushak.stl', .65, mushaka, 'mushaka', null);
 
   // 8 Floating Golden Diya Lamps
   const diyaOrbit = new T.Group();
@@ -1385,6 +1643,41 @@ export function createWorld(canvas) {
     idol.rotation.y = (i<2?1:-1)*.22;
   }
 
+  // ─── CH 11: SUNRISE — "He never truly leaves" → underwater ascent → Nexis sunrise ───
+  // The camera rises from underwater depth (-5) back up through the surface,
+  // reveals a golden horizon, then the Nexis logo sprite fades in on the sun disc.
+  const nexisTexture = new T.TextureLoader().load('./assets/nexis.png');
+  const nexisSun = new T.Sprite(new T.SpriteMaterial({
+    map: nexisTexture, transparent: true, opacity: 0,
+    depthWrite: false, blending: T.NormalBlending
+  }));
+  nexisSun.scale.set(6, 3, 1);
+  nexisSun.position.set(0, 4, -38);
+  roots[11].add(nexisSun);
+
+  // Golden horizon glow behind the logo
+  const horizonCanvas = document.createElement('canvas');
+  horizonCanvas.width = 256; horizonCanvas.height = 64;
+  const hCtx = horizonCanvas.getContext('2d');
+  const hGrad = hCtx.createLinearGradient(0, 0, 0, 64);
+  hGrad.addColorStop(0, '#fff4d0ff');
+  hGrad.addColorStop(0.35, '#ffb83088');
+  hGrad.addColorStop(1,   '#ff600000');
+  hCtx.fillStyle = hGrad;
+  hCtx.fillRect(0, 0, 256, 64);
+  const horizonSprite = new T.Sprite(new T.SpriteMaterial({
+    map: new T.CanvasTexture(horizonCanvas), transparent: true, opacity: 0, depthWrite: false
+  }));
+  horizonSprite.scale.set(40, 8, 1);
+  horizonSprite.position.set(0, -0.5, -40);
+  roots[11].add(horizonSprite);
+
+  // Shimmering water surface plane for the ascent
+  const surfaceMat = new T.MeshStandardMaterial({
+    color: 0x2a8090, transparent: true, opacity: 0.55, roughness: 0.05, metalness: 0.9
+  });
+  mesh(new T.PlaneGeometry(80, 80), surfaceMat, roots[11], [0, 0, -18]).rotation.x = -Math.PI/2;
+
   // ─── AMBIENT SACRED STARDUST SYSTEM ───
   const count = innerWidth < 700 ? 1600 : 3600;
   const positions = new Float32Array(count * 3), seeds = new Float32Array(count);
@@ -1438,7 +1731,7 @@ export function createWorld(canvas) {
     [[-2.4, 1.4, 10], [3.2, 1.6, 8], [1.5, 0.8, 0]],   // 03: Shiva Arrival
     [[5.5, 2.8, 12], [-4.5, 1.5, 8], [0, 0.6, 0]],    // 04: The Battle (Confrontation)
     [[0, 1.4, 11], [1.8, 2.4, 8], [0, 1.0, 0]],        // 05: Shakti's Cosmic Rage
-    [[0, 1.8, 8], [0.8, 1.4, 0], [0.6, 0.8, -3.5]],     // 06: The Search (Elephant in majesty)
+    [[0, 1.8, 13], [2.8, 1.2, 8], [0.6, -0.1, -3.5]],     // 06: The Search (Elephant in majesty)
     [[5.2, 2.0, 12], [-1.8, 1.8, 10], [1.6, 0.6, 0]],  // 07: Rebirth (Shiva, Parvati & Ganesha)
     [[-1, 2, 11], [4, 2, 8], [0, 0.5, 0]],             // 08: Wisdom / Modak
     [[-5, 3, 14], [5, 2, 12], [0, 1, 0]],              // 09: Ganesh Chaturthi
@@ -1494,6 +1787,18 @@ export function createWorld(canvas) {
         from.y = T.MathUtils.lerp(from.y, -5.5, beats.dive);
         target.y = T.MathUtils.lerp(target.y, -5.8, beats.dive);
       }
+      const weaponShot=index===4&&local>=.25&&local<.5;
+      // During the throw, lock camera tight behind the Trishul path
+      if(weaponShot) {
+        const accel = beats.flight * beats.flight * beats.flight;
+        // Camera pulls back slightly as Trishul rushes forward — cinematic dolly
+        from.set(0, 1.2 + accel * 0.3, -4*42 + 9 - accel * 2.5);
+        target.set(0, 1.1, -4*42);
+        // Boost scene brightness as Trishul approaches
+        key.color.setHex(0xfff0cc); key.intensity = 48 + accel * 220;
+        rim.color.setHex(0xff8800); rim.intensity = 30 + accel * 160;
+        scene.fog.color.setHex(0x060404);
+      }
       camera.position.copy(from);
       camera.position.x += px * 0.32; camera.position.y -= py * 0.16;
       camera.lookAt(target);
@@ -1509,7 +1814,7 @@ export function createWorld(canvas) {
         camera.rotation.z = 0;
       }
 
-      roots.forEach((root, i) => root.visible = Math.abs(i - index) <= 1);
+      roots.forEach((root, i) => root.visible = i === index || (local > .74 && i === index + 1));
 
       // Dynamic cinematic lighting
       key.position.set(4, 6, camera.position.z - 4);
@@ -1520,13 +1825,13 @@ export function createWorld(canvas) {
       topRim.target.updateMatrixWorld();
 
       if (index === 5) {
-        key.color.setHex(0xff2800); key.intensity = 190;
+        key.color.setHex(0xff2800); key.intensity = 65;
         rim.color.setHex(0xa01200); rim.intensity = 130;
         topRim.color.setHex(0xff9930); topRim.intensity = 2.8;
         scene.fog.color.setHex(0x120404);
       } else if (index === 2 || index === 3) {
-        key.color.setHex(0xc0d8f0); key.intensity = 110;
-        rim.color.setHex(0x2a5578); rim.intensity = 75;
+        key.color.setHex(0xc0d8f0); key.intensity = 42;
+        rim.color.setHex(0x2a5578); rim.intensity = 30;
         topRim.color.setHex(0xbcd8f5); topRim.intensity = 2.2;
         scene.fog.color.setHex(0x040810);
       } else if (index === 6) {
@@ -1540,8 +1845,8 @@ export function createWorld(canvas) {
         topRim.color.setHex(0xffb050); topRim.intensity = 2.4;
         scene.fog.color.setHex(0x040910);
       } else {
-        key.color.setHex(0xffd092); key.intensity = 130;
-        rim.color.setHex(0x4a7ea5); rim.intensity = 90;
+        key.color.setHex(0xffe4cb); key.intensity = 48;
+        rim.color.setHex(0x4a7ea5); rim.intensity = 35;
         topRim.color.setHex(0xfff0d0); topRim.intensity = 2.2;
         scene.fog.color.setHex(0x040607); scene.fog.density = 0.018;
       }
@@ -1554,6 +1859,13 @@ export function createWorld(canvas) {
       parvatiCh1.update(t, local);
       childCh1.update(t, local);
       pranaMat.uniforms.time.value = t;
+      glitterMat.uniforms.time.value = t;
+      heartBloomMat.uniforms.time.value = t;
+      // Fade all three prana effects in early, out late
+      const pranaAlpha = T.MathUtils.smoothstep(local, 0.02, 0.15) * (1.0 - T.MathUtils.smoothstep(local, 0.72, 0.92));
+      pranaParticles.visible  = index === 1 && pranaAlpha > 0.01;
+      glitterParticles.visible = index === 1 && pranaAlpha > 0.01;
+      heartBloom.visible       = index === 1 && pranaAlpha > 0.01;
       fogPlane.material.uniforms.time.value = t;
 
       // Chapter 2: Young Ganesha guarding the gate
@@ -1564,17 +1876,117 @@ export function createWorld(canvas) {
       shivaCh3.update(t, local);
       snowMat.uniforms.time.value = t;
 
-      // Chapter 4: The Battle
+      // Chapter 4: The Battle — extended cinematic Trishul sequence
+      // local 0.00–0.08 : normal battle scene
+      // local 0.08–0.25 : WINDUP — camera orbits Shiva's trishul, 3 dramatic angles
+      // local 0.25–0.50 : FLIGHT — Trishul flies tip-first at camera (weaponShot)
+      // local 0.48–0.54 : IMPACT — flash + decapitation
+      // local 0.50–0.70 : AFTERMATH — body falls
+
       battle.rotation.set(0,0,0);
       shivaCh4.update(t,local);
-      shivaCh4.rightArm.rotation.z = -beats.windup*1.2 + beats.flight*1.65;
-      shivaCh4.trishul.visible = local < .26;
-      flyingTrishul.visible = local >= .26 && local < .52;
-      flyingTrishul.position.set(3.4 - beats.flight*3.2, .75 + Math.sin(beats.flight*Math.PI)*.45, .25);
-      impactLight.intensity = local >= .48 && local < .54 ? 90 : 0;
-      guardianCh4.head.visible = local < .5;
+      shivaCh4.trishul.visible = false;
+
+      // ─ WINDUP camera orbit (3 cinematic angles as Shiva winds up) ─
+      if (index === 4 && local >= 0.08 && local < 0.25) {
+        const wu = (local - 0.08) / 0.17;  // 0→1 across windup
+        // Angle 1 (0–0.33): side-on close-up on Shiva's face + trishul
+        // Angle 2 (0.33–0.66): low-angle looking up at trishul tip
+        // Angle 3 (0.66–1.0): wide pull-back, both figures
+        const seg = Math.floor(wu * 3);
+        const segT = (wu * 3) % 1;
+        const base = -4 * 42;
+        if (seg === 0) {
+          from.set(T.MathUtils.lerp(3.5, 2.5, segT), T.MathUtils.lerp(1.8, 2.2, segT), base + T.MathUtils.lerp(6, 5, segT));
+          target.set(2.2, 1.4, base);
+        } else if (seg === 1) {
+          from.set(T.MathUtils.lerp(1.5, 0, segT), T.MathUtils.lerp(-0.5, -1.0, segT), base + T.MathUtils.lerp(5, 7, segT));
+          target.set(2.2, 2.8, base);
+        } else {
+          from.set(T.MathUtils.lerp(-1, 0, segT), T.MathUtils.lerp(2.5, 1.2, segT), base + T.MathUtils.lerp(14, 10, segT));
+          target.set(0, 0.6, base);
+        }
+        camera.position.copy(from);
+        camera.lookAt(target);
+        camera.rotation.z = Math.sin(t * 2.5) * 0.015;
+      }
+
+      battle.children.forEach(child=>child.visible=!weaponShot);
+      flyingTrishul.visible = weaponShot;
+      trishulTrail.visible  = weaponShot;
+
+      if (weaponShot) {
+        const rawF  = beats.flight;
+        const eased = rawF * rawF * (3.0 - 2.0 * rawF);
+        const accel = rawF * rawF * rawF;
+        const f     = eased;
+
+        const launchX =  1.4;
+        const targetX = -0.1;
+        const fx = T.MathUtils.lerp(launchX, targetX, f) + Math.sin(f * Math.PI) * 0.08;
+        const fy = T.MathUtils.lerp(1.4,  1.05, f) - Math.sin(f * Math.PI) * 0.12;
+        const fz = T.MathUtils.lerp(-8.5, 5.5, accel);
+        flyingTrishul.position.set(fx, fy, fz);
+
+        flyingTrishul.rotation.set(
+          Math.PI + 0.22 * (1.0 - f),
+          -0.35 * (1.0 - f),
+          0
+        );
+
+        const sc = T.MathUtils.lerp(0.55, 3.8, accel);
+        flyingTrishul.scale.setScalar(sc);
+
+        if (index === 4) {
+          const shake = accel * 0.055;
+          camera.position.x += (Math.random() - 0.5) * shake;
+          camera.position.y += (Math.random() - 0.5) * shake * 0.6;
+        }
+
+        shivaCh4.rightArm.rotation.z = -beats.windup * 1.2 + rawF * 1.65;
+        coronaMat.uniforms.time.value   = t;
+        coronaMat.uniforms.flight.value = f;
+
+        const spawnCount = 4 + Math.floor(accel * 14);
+        for (let sp = 0; sp < spawnCount; sp++) {
+          const idx = trailHead % trailCount;
+          const spread = 0.04 + accel * 0.08;
+          trailPos[idx*3]   = fx + (Math.random()-0.5)*spread;
+          trailPos[idx*3+1] = fy + (Math.random()-0.5)*spread*0.5;
+          trailPos[idx*3+2] = fz + 0.3 + Math.random()*0.4;
+          trailAge[idx]     = 0.0;
+          trailHead++;
+        }
+        for (let i = 0; i < trailCount; i++) {
+          trailAge[i] = Math.min(1.0, trailAge[i] + delta * (3.5 + accel * 8.0));
+        }
+        trailGeo.attributes.position.needsUpdate = true;
+        trailGeo.attributes.age.needsUpdate      = true;
+        trailMat.uniforms.speed.value = accel;
+
+      } else {
+        shivaCh4.rightArm.rotation.z = -beats.windup*1.2;
+        flyingTrishul.scale.setScalar(1);
+        for (let i = 0; i < trailCount; i++) trailAge[i] = 1.0;
+        trailGeo.attributes.age.needsUpdate = true;
+        coronaMat.uniforms.flight.value = 0;
+        coronaMat.uniforms.time.value   = t;
+      }
+
+      // Shockwave overlay: flashes white on impact
+      shockwaveMat.uniforms.impact.value = beats.impact;
+      shockwaveMesh.visible = beats.impact > 0.01;
+
+      fallenBody.visible = local>=.55;
+      fallenBody.rotation.z = Math.PI/2;
+      guardianCh4.group.visible = local<.5&&!weaponShot;
+      impactLight.intensity = local >= .48 && local < .54 ? 120 : 0;
+      guardianCh4.head.visible = local < .48;
       guardianCh4.group.rotation.z = beats.fall*1.45;
       guardianCh4.group.position.y = -.8 - beats.fall*1.25;
+      // Staff moves to Ganesha's side (not through body) and drops with him
+      guardianCh4.staff.visible = local < 0.48;
+      guardianCh4.staff.position.set(0.55, 0.5, 0.2);
       guardianCh4.staff.rotation.z = beats.fall*1.2;
       fallenWeapon.visible = local > .53;
 
@@ -1590,17 +2002,28 @@ export function createWorld(canvas) {
       // Chapter 6: The Forest & Elephant
       fireflies.visible = index === 6;
       fireflyMat.uniforms.time.value = t;
-      elephant.position.y = 0.2 + Math.sin(t * 1.1) * 0.05;
+      // Responsive, scroll-linked reveal inspired by the Anime.js onScroll example.
+      const elephantReveal=T.MathUtils.smoothstep(local,.08,.6);
+      elephant.position.z=-5.5+elephantReveal*2;
+      elephant.rotation.y=-.32+elephantReveal*.45;
+      elephant.scale.y=1+Math.sin(t*1.1)*.003;
       forestMist.material.uniforms.time.value = t;
 
       // Chapter 7: Rebirth
-      restoredChild.group.visible = local < .6;
+      restoredChild.group.visible = local < .58;
       restoredChild.group.rotation.z = (1-beats.restore)*1.15;
-      restoredChild.group.position.y = -1.1 - (1-beats.restore)*.8;
-      elephantHead.visible = local < .6;
-      elephantHead.position.set(1.6, 4.5 - beats.restore*3.75, .1);
-      elephantHead.scale.setScalar(1.5);
-      reborn.visible = local >= .55;
+      // Body rests at y=-2.2 when fully upright
+      restoredChild.group.position.set(1.6, -2.2-(1-beats.restore)*.3, 0);
+      elephantHead.visible = local < .58;
+      // Body is 3.2 tall, floored at y=0 inside group which sits at -2.2 → body top = 1.0
+      // Head is 2.0 tall, addDetail centers it at height/2=1.0 inside elephantHead group
+      // So elephantHead.position.y must = body_world_top = restoredChild.group.y + 3.2
+      const bodyWorldY = -2.2 - (1-beats.restore)*0.3;
+      const bodyTop    = bodyWorldY + 3.2;
+      // Descends from +5 world-y down to exactly bodyTop
+      elephantHead.position.set(1.6, T.MathUtils.lerp(5.2, bodyTop, beats.restore), 0.05);
+      elephantHead.scale.setScalar(1.0);
+      reborn.visible = local >= .58;
       reborn.scale.setScalar(.85 + beats.awaken*.15);
       rebornHalo.rotation.z = local * 0.3;
       shivaCh7.update(t, local);
@@ -1613,6 +2036,7 @@ export function createWorld(canvas) {
         sculptureHolders[1].visible = index !== 7 || local > 0.25;
       }
 
+      mushaka.rotation.y = Math.PI/3+Math.sin(t*.6)*.1;
       // Chapter 8: Modak Scene
       const hs = modakHover ? 2.5 : 1.0;
       modakGroup.rotation.y = t * 0.2 * hs + local * 2.0;
@@ -1678,6 +2102,35 @@ export function createWorld(canvas) {
       dustMat.uniforms.speed.value = index === 5 ? 4 : index === 10 ? -0.5 : 1;
       burst = Math.max(0, burst - delta * 0.5);
       dustMat.uniforms.burst.value = burst;
+
+      // Chapter 11: Sunrise — camera ascends from underwater, reveals Nexis horizon
+      if (index === 11) {
+        // Camera rises: starts submerged at y=-4, breaks surface at local≈0.4, settles at y=2
+        const rise = T.MathUtils.smoothstep(local, 0.0, 0.55);
+        const camY = T.MathUtils.lerp(-4.5, 2.2, rise);
+        camera.position.set(0, camY, -11 * 42 + 14);
+        camera.lookAt(0, camY + 0.5, -11 * 42);
+
+        // Underwater fog fades to sky as we break surface
+        const surfaceBreak = T.MathUtils.smoothstep(local, 0.35, 0.55);
+        scene.fog.color.setHex(surfaceBreak > 0.5 ? 0x0a1428 : 0x07343e);
+        scene.fog.density = T.MathUtils.lerp(0.065, 0.012, surfaceBreak);
+        scene.background.setHex(surfaceBreak > 0.5 ? 0x0a1428 : 0x07343e);
+
+        // Sunrise lighting warms up
+        key.color.setHex(0xffcc88); key.intensity = T.MathUtils.lerp(20, 180, rise);
+        rim.color.setHex(0xff8830); rim.intensity = T.MathUtils.lerp(10, 120, rise);
+
+        // Nexis logo + horizon fade in after surface break
+        const logoReveal = T.MathUtils.smoothstep(local, 0.58, 0.82);
+        nexisSun.material.opacity    = logoReveal * 0.95;
+        horizonSprite.material.opacity = T.MathUtils.smoothstep(local, 0.45, 0.72) * 0.85;
+        // Gentle pulse on the logo
+        nexisSun.scale.set(6 + Math.sin(t * 1.4) * 0.12, 3 + Math.sin(t * 1.4) * 0.06, 1);
+      } else {
+        nexisSun.material.opacity    = 0;
+        horizonSprite.material.opacity = 0;
+      }
 
       renderer.setRenderTarget(null);
       renderer.render(scene, camera);
