@@ -481,13 +481,21 @@ export function createWorld(canvas) {
       const centreY = (bb.max.y + bb.min.y) / 2;
       geo.translate(-centreX, -centreY, -bb.min.z);
 
-      const bodyMesh = new T.Mesh(geo, paintDeity(geo, 'parvati', 'z'));
+      // Warm rose-wheat skin tone — Chola bronze patina, warm emissive so it reads
+      // correctly under the dark Kailash lighting without washing out
+      const parvatiBodMat = new T.MeshStandardMaterial({
+        color:    0xc87848,   // rich terracotta-rose — classic Parvati Chola bronze
+        metalness: 0.08,
+        roughness: 0.58,
+        emissive:  0x5a1800,
+        emissiveIntensity: 0.22,
+        side: T.DoubleSide
+      });
+      const bodyMesh = new T.Mesh(geo, parvatiBodMat);
       bodyMesh.scale.setScalar(fitScale);
-      // STL exported Z-up: rotate -90° on X to stand upright, then face camera (+Z)
       bodyMesh.rotation.x = -Math.PI / 2;
       bodyMesh.position.y = -2.0;
       g.add(bodyMesh);
-
       // Reposition accessories to match the loaded model proportions
       const totalH = modelHeight * fitScale;
       leftArm.position.y  = totalH * 0.68 - 2.0;
@@ -549,7 +557,17 @@ export function createWorld(canvas) {
       const centreY = (bb.max.y + bb.min.y) / 2;
       geo.translate(-centreX, -centreY, -bb.min.z);
 
-      const bodyMesh = new T.Mesh(geo, paintDeity(geo, 'shiva', 'z'));
+      // Deep Neelkantha blue — muted indigo, strong emissive so colour reads true
+      // under dark mountain lighting. Not bright cobalt — deep divine blue.
+      const shivaBodMat = new T.MeshStandardMaterial({
+        color:    0x1e3878,   // deep indigo-blue Neelkantha
+        metalness: 0.05,
+        roughness: 0.60,
+        emissive:  0x0a1840,
+        emissiveIntensity: 0.35,
+        side: T.DoubleSide
+      });
+      const bodyMesh = new T.Mesh(geo, shivaBodMat);
       bodyMesh.scale.setScalar(fitScale);
       // STL exported Z-up: rotate -90° on X to stand upright, then face camera (+Z)
       bodyMesh.rotation.x = -Math.PI / 2;

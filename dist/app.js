@@ -1,4 +1,4 @@
-import { createWorld } from './world.js?v=assets32';
+import { createWorld } from './world.js?v=assets33';
 import { chapterAt, chapterOpacity } from './timeline.js?v=story16';
 
 const $ = s => document.querySelector(s);
