@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="./style.css">
   <script defer src="./vendor/gsap.min.js"></script>
   <script defer src="./vendor/ScrollTrigger.min.js"></script>
-  <script type="module" src="./app.js?v=story16"></script>
+  <script type="module" src="./app.js?v=assets26"></script>
 </head>
 <body>
   <a class="skip" href="#story">Skip to story</a>
@@ -33,7 +33,14 @@
       <button id="chapters-button" aria-haspopup="dialog">CHAPTERS <span class="menu-icon">☰</span></button>
     </div>
   </header>
-  <p id="loading" role="status">Preparing the sacred sanctuary…</p>
+  <div id="loading-screen" aria-live="polite" role="status">
+    <div class="loading-inner">
+      <div class="loading-om">ॐ</div>
+      <div class="loading-title">GANAPATI</div>
+      <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
+      <div class="loading-label" id="loading-label">Preparing the sacred sanctuary…</div>
+    </div>
+  </div>
   <main id="story" tabindex="-1">
     <section class="chapter" id="prologue" data-name="The beginning">
       <div class="copy hero">
@@ -122,7 +129,7 @@
         <p class="sanskrit" lang="mr">गणपति बप्पा मोरया</p>
         <p class="eyebrow">AN INTERACTIVE DIGITAL EXPERIENCE</p>
         <img src="./assets/nexis.png" alt="Nexis — Building skills. Building solutions." width="240" height="240">
-        <p class="credit-note model-credit">Ganesha sculpture · Minneapolis Institute of Art · CC0<br><a href="https://commons.wikimedia.org/wiki/File:Ganesha,_10th_-_11th_C_CE_-_3D_model_by_Minneapolis_Institute_of_Art_-_Sketchfab.stl" target="_blank" rel="noopener">View the original 3D scan ↗</a></p>
+        <p class="credit-note model-credit">3D models supplied for this experience.</p>
         <p class="credit-note">An artistic retelling. Ganesh Chaturthi · 2026.</p>
         <button id="replay" class="begin">REPLAY <span>↺</span></button>
       </div>

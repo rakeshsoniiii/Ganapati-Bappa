@@ -303,15 +303,15 @@ export function createWorld(canvas) {
     const centerX = (bb.max.x+bb.min.x)/2;
     // Palette: [skin/body, garment/cloth, dark accent]
     const palette = {
-      shiva:        [0x4a8fd4, 0xd4882a, 0x1a1e28],
-      parvati:      [0xe8c4a0, 0xc8182e, 0x1a0c10],  // warmer wheat, true vermillion saree
+      shiva:        [0x3a72b8, 0xd4882a, 0x1a1e28],  // deeper cobalt | saffron dhoti | dark
+      parvati:      [0xe8c4a0, 0xc8182e, 0x1a0c10],  // warm wheat skin | vermillion saree | blouse
       shakti:       [0xe8c4a0, 0xaa0e1c, 0x280810],
-      child:        [0xf5d8a8, 0xc88a10, 0x28180c],  // ivory-cream skin, marigold dhoti
-      headless:     [0xf5d8a8, 0xc88a10, 0x28180c],
+      child:        [0xf0d4a8, 0xc88a10, 0x28180c],  // warm ivory skin | golden dhoti
+      headless:     [0xf0d4a8, 0xc88a10, 0x28180c],
       ganesha:      [0xd4906a, 0xc01c2c, 0x3a1820],
-      elephantHead: [0x9aaab8, 0xd09080, 0x1c1418],  // divine blue-grey, rose-blush ears
-      elephant:     [0x8898a8, 0xd09070, 0x1c1a18],  // richer grey, vivid warm ears
-      mushaka:      [0x9a6840, 0xf5e5c8, 0x1e100a],  // richer chestnut, bright cream belly
+      elephantHead: [0xb0bcc8, 0xe0a080, 0x1c1418],  // warmer blue-grey | vivid rose ear | shadow
+      elephant:     [0x9aaab8, 0xd09070, 0x1c1a18],
+      mushaka:      [0x9a6840, 0xf5e5c8, 0x1e100a],
     }[kind];
     const colors = palette.map(c=>new T.Color(c));
     const goldColor    = new T.Color(0xe0a830);   // warm temple gold
@@ -724,7 +724,8 @@ export function createWorld(canvas) {
     g.rotation.y = rotY;
     parent.add(g);
 
-    // Simple stone floor disc — no pin/stick visible below feet
+    // Stone base disc sits flat on the temple floor — group y=-2.65, floor top=-2.65
+    // disc centre at y=0 inside group = world y=-2.65 = exactly flush with floor
     mesh(new T.CylinderGeometry(0.72, 0.80, 0.10, 32), stoneGray, g, [0, 0.05, 0]);
     mesh(new T.CylinderGeometry(0.78, 0.72, 0.04, 32), gold, g, [0, 0.11, 0]);
 
@@ -833,153 +834,128 @@ export function createWorld(canvas) {
   // Child Ganesha seated on golden lotus pedestal
   const childCh1 = createChildGanesha(roots[1], { mode: 'creation', pos: [1.2, -1.0, 0], scale: 1.15, rotY: -0.35 });
 
-  // ── DIVINE PRANA SPARKS — flow from Maa Parvati's hands to Ganesha's heart ──
-  // Three streams: main arc, fine glitter, and a heart-glow bloom at the destination.
-  //
-  // World positions (roots[1] local space):
-  //   Parvati right hand : approx (-0.65, 0.55, 0.3)  — her outstretched palm
-  //   Ganesha heart      : approx ( 1.20, 1.10, 0.2)  — centre of his chest
-  //
-  // The Bezier control point lifts into an arc above them for a magical, cinematic feel.
+  // ══════════════════════════════════════════════════════
+  // ── DIVINE PRANA LIGHT — massive golden flow from Maa's hands to Ganesha ──
+  // Parvati at pos[-1.4, -0.5] scale=1.15 → left palm  ≈ (-2.0,  0.90, 0.5)
+  //                                          right palm ≈ (-0.90, 0.75, 0.6)
+  // Ganesha at pos[ 1.2, -1.0] scale=1.15 → chest/heart≈ ( 1.40, 1.70, 0.3)
+  // ══════════════════════════════════════════════════════
 
-  // — Stream 1: main golden arc (240 particles, large, slow) —
-  const pranaCount = 240;
-  const pranaGeo = new T.BufferGeometry();
-  const pranaPos  = new Float32Array(pranaCount * 3);
-  const pranaSeed = new Float32Array(pranaCount);
-  for (let i = 0; i < pranaCount; i++) {
-    pranaSeed[i] = i / pranaCount;   // evenly spaced so stream is continuous
-  }
-  pranaGeo.setAttribute('position', new T.BufferAttribute(pranaPos,  3));
-  pranaGeo.setAttribute('seed',     new T.BufferAttribute(pranaSeed, 1));
+  // ── STREAM A: main golden river — 2400 large soft orbs ──
+  const pranaCount  = 2400;
+  const pranaGeo    = new T.BufferGeometry();
+  const pranaSeed   = new Float32Array(pranaCount);
+  const pranaStream = new Float32Array(pranaCount); // 0=left hand  1=right hand
+  for (let i = 0; i < pranaCount; i++) { pranaSeed[i] = i / pranaCount; pranaStream[i] = i % 2; }
+  pranaGeo.setAttribute('position', new T.BufferAttribute(new Float32Array(pranaCount*3), 3));
+  pranaGeo.setAttribute('seed',     new T.BufferAttribute(pranaSeed,   1));
+  pranaGeo.setAttribute('stream',   new T.BufferAttribute(pranaStream, 1));
 
   const pranaMat = new T.ShaderMaterial({
     transparent: true, depthWrite: false, blending: T.AdditiveBlending,
     uniforms: { time: { value: 0 } },
     vertexShader: `
-      uniform float time;
-      attribute float seed;
-      varying  float vLife;
-      void main() {
-        // t cycles 0→1 along the arc, offset per particle so stream is continuous
-        float t = fract(seed + time * 0.28);
-
-        // Quadratic Bezier: hand → lifted control → heart
-        vec3 p0 = vec3(-0.65, 0.55, 0.30);   // Maa's right palm
-        vec3 p1 = vec3( 0.30, 2.10, 0.60);   // lifted divine arc apex
-        vec3 p2 = vec3( 1.20, 1.10, 0.20);   // Ganesha's heart
-
-        vec3 pa = mix(p0, p1, t);
-        vec3 pb = mix(p1, p2, t);
-        vec3 p  = mix(pa, pb, t);
-
-        // Gentle organic wobble around the arc
-        float wobble = sin(seed * 47.3 + time * 2.8) * 0.055;
-        p.x += wobble;
-        p.y += cos(seed * 31.7 + time * 2.2) * 0.040;
-        p.z += sin(seed * 19.1 + time * 3.1) * 0.045;
-
-        vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        gl_Position = projectionMatrix * mv;
-
-        // Particles are brightest near the middle of the arc, fade at ends
-        vLife = sin(t * 3.14159);
-        float sz = 3.5 + seed * 9.0 + vLife * 8.0;
-        gl_PointSize = clamp(sz / -mv.z, 1.5, 14.0);
+      uniform float time; attribute float seed; attribute float stream;
+      varying float vLife; varying float vS;
+      vec3 bez(vec3 a,vec3 b,vec3 c,float t){return mix(mix(a,b,t),mix(b,c,t),t);}
+      void main(){
+        vS=stream;
+        float spd=stream<.5?.20:.25, ph=stream<.5?.0:.4;
+        float t=fract(seed+time*spd+ph);
+        vec3 p=stream<.5
+          ? bez(vec3(-2.0,.90,.50),vec3(-.15,3.40,.90),vec3(1.40,1.70,.30),t)
+          : bez(vec3(-.90,.75,.60),vec3( .25,2.80,.75),vec3(1.40,1.70,.30),t);
+        // spiral swirl tightens toward destination
+        float sw=t*18.85; float r=.12+.18*(1.-t);
+        p.x+=cos(sw+seed*6.28)*r; p.y+=sin(sw*.7+seed*5.)*r*.55; p.z+=sin(sw+seed*7.3)*r*.75;
+        // turbulence
+        p.x+=sin(seed*43.1+time*1.9)*.07; p.y+=cos(seed*29.7+time*2.3)*.06;
+        vLife=sin(t*3.14159);
+        vec4 mv=modelViewMatrix*vec4(p,1.);
+        gl_Position=projectionMatrix*mv;
+        gl_PointSize=clamp((22.+seed*60.+vLife*50.)/-mv.z,2.,130.);
       }`,
     fragmentShader: `
-      varying float vLife;
-      void main() {
-        float d = length(gl_PointCoord - 0.5);
-        if (d > 0.5) discard;
-        // Core white → warm gold → deep orange at edge
-        vec3 inner = vec3(1.00, 0.97, 0.85);
-        vec3 mid   = vec3(1.00, 0.82, 0.30);
-        vec3 outer = vec3(0.95, 0.42, 0.06);
-        float r = d * 2.0;
-        vec3 col = mix(inner, mix(mid, outer, r), r);
-        float a = (1.0 - smoothstep(0.05, 0.50, d)) * vLife * 0.92;
-        gl_FragColor = vec4(col, a);
+      varying float vLife; varying float vS;
+      void main(){
+        float d=length(gl_PointCoord-.5); if(d>.5)discard;
+        vec3 col=vS<.5
+          ? mix(vec3(1.,.98,.88),vec3(1.,.82,.22),d*2.)
+          : mix(vec3(1.,.92,.60),vec3(1.,.50,.06),d*2.);
+        float a=(1.-smoothstep(.0,.50,d))*vLife*.95;
+        gl_FragColor=vec4(col,a);
       }`
   });
   const pranaParticles = new T.Points(pranaGeo, pranaMat);
   roots[1].add(pranaParticles);
 
-  // — Stream 2: fine glitter (400 tiny fast sparks, tight around the arc) —
-  const glitterCount = 400;
-  const glitterGeo  = new T.BufferGeometry();
-  const glitterSeed = new Float32Array(glitterCount);
-  for (let i = 0; i < glitterCount; i++) glitterSeed[i] = Math.random();
-  glitterGeo.setAttribute('seed', new T.BufferAttribute(glitterSeed, 1));
-  // position attribute is required even if unused (WebGL demands it)
-  glitterGeo.setAttribute('position', new T.BufferAttribute(new Float32Array(glitterCount * 3), 3));
+  // ── STREAM B: 1200 fast escaping sparks ──
+  const glitterCount = 1200;
+  const glitterGeo   = new T.BufferGeometry();
+  const glitterSeed  = new Float32Array(glitterCount);
+  for (let i=0;i<glitterCount;i++) glitterSeed[i]=Math.random();
+  glitterGeo.setAttribute('position', new T.BufferAttribute(new Float32Array(glitterCount*3), 3));
+  glitterGeo.setAttribute('seed',     new T.BufferAttribute(glitterSeed, 1));
 
   const glitterMat = new T.ShaderMaterial({
     transparent: true, depthWrite: false, blending: T.AdditiveBlending,
     uniforms: { time: { value: 0 } },
     vertexShader: `
-      uniform float time;
-      attribute float seed;
-      varying  float vA;
-      void main() {
-        float t = fract(seed + time * 0.55);   // faster stream
-
-        vec3 p0 = vec3(-0.65, 0.55, 0.30);
-        vec3 p1 = vec3( 0.30, 2.10, 0.60);
-        vec3 p2 = vec3( 1.20, 1.10, 0.20);
-        vec3 pa = mix(p0, p1, t);
-        vec3 pb = mix(p1, p2, t);
-        vec3 p  = mix(pa, pb, t);
-
-        // Wider scatter so they look like escaping sparks
-        float scatter = sin(seed * 73.1 + time * 5.2) * 0.14;
-        p.x += scatter;
-        p.y += cos(seed * 53.7 + time * 4.8) * 0.10;
-        p.z += sin(seed * 41.9 + time * 6.0) * 0.10;
-
-        vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        gl_Position = projectionMatrix * mv;
-        vA = sin(t * 3.14159) * (0.5 + seed * 0.5);
-        gl_PointSize = clamp((1.8 + seed * 3.5) / -mv.z, 1.0, 5.0);
+      uniform float time; attribute float seed; varying float vA;
+      vec3 bez(vec3 a,vec3 b,vec3 c,float t){return mix(mix(a,b,t),mix(b,c,t),t);}
+      void main(){
+        float t=fract(seed+time*.48);
+        vec3 origin=mix(vec3(-2.0,.90,.50),vec3(-.90,.75,.60),fract(seed*7.3));
+        vec3 p=bez(origin,vec3(-.10,3.0,.80),vec3(1.40,1.70,.30),t);
+        p.x+=sin(seed*83.1+time*6.2)*.28; p.y+=cos(seed*61.7+time*5.4)*.22;
+        p.z+=sin(seed*47.9+time*7.1)*.22;
+        vec4 mv=modelViewMatrix*vec4(p,1.);
+        gl_Position=projectionMatrix*mv;
+        vA=sin(t*3.14159)*(.6+seed*.4);
+        gl_PointSize=clamp((6.+seed*14.)/-mv.z,1.,22.);
       }`,
     fragmentShader: `
       varying float vA;
-      void main() {
-        float d = length(gl_PointCoord - 0.5);
-        if (d > 0.5) discard;
-        vec3 col = mix(vec3(1.0, 1.0, 0.9), vec3(1.0, 0.6, 0.1), d * 2.0);
-        gl_FragColor = vec4(col, (1.0 - d * 2.0) * vA * 0.7);
+      void main(){
+        float d=length(gl_PointCoord-.5); if(d>.5)discard;
+        vec3 col=mix(vec3(1.,1.,.88),vec3(1.,.62,.08),d*2.2);
+        gl_FragColor=vec4(col,(1.-smoothstep(.0,.50,d))*vA*.88);
       }`
   });
   const glitterParticles = new T.Points(glitterGeo, glitterMat);
   roots[1].add(glitterParticles);
 
-  // — Bloom 3: radiant glow at Ganesha's heart (single large soft disc) —
+  // ── BLOOM C: heart glow + both palm glows (3 large radiant discs) ──
   const heartBloomMat = new T.ShaderMaterial({
     transparent: true, depthWrite: false, blending: T.AdditiveBlending,
     uniforms: { time: { value: 0 } },
     vertexShader: `
-      uniform float time;
-      void main() {
-        vec3 p = vec3(1.20, 1.10, 0.20);
-        vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        gl_Position = projectionMatrix * mv;
-        float pulse = 0.7 + 0.3 * sin(time * 3.5);
-        gl_PointSize = clamp(55.0 * pulse / -mv.z, 8.0, 72.0);
+      uniform float time; attribute float seed; varying float vS;
+      void main(){
+        vS=seed;
+        vec3 p=seed<.5  ? vec3(1.40,1.70,.30)
+              :seed<1.5 ? vec3(-2.0,.90,.50)
+              :            vec3(-.90,.75,.60);
+        float pulse=seed<.5 ? .8+.2*sin(time*3.8) : .65+.35*abs(sin(time*4.2+seed));
+        vec4 mv=modelViewMatrix*vec4(p,1.);
+        gl_Position=projectionMatrix*mv;
+        float base=seed<.5?130.:70.;
+        gl_PointSize=clamp(base*pulse/-mv.z,10.,180.);
       }`,
     fragmentShader: `
-      uniform float time;
-      void main() {
-        float d = length(gl_PointCoord - 0.5);
-        if (d > 0.5) discard;
-        float pulse = 0.7 + 0.3 * sin(time * 3.5);
-        float a = (1.0 - smoothstep(0.0, 0.50, d)) * pulse * 0.55;
-        vec3 col = mix(vec3(1.0, 0.97, 0.80), vec3(1.0, 0.65, 0.12), d * 2.5);
-        gl_FragColor = vec4(col, a);
+      varying float vS;
+      void main(){
+        float d=length(gl_PointCoord-.5); if(d>.5)discard;
+        float a=(1.-smoothstep(.0,.50,d))*.70;
+        vec3 col=vS<.5  ? mix(vec3(1.,.98,.80),vec3(1.,.70,.10),d*2.)
+                :vS<1.5 ? mix(vec3(1.,.94,.68),vec3(1.,.48,.04),d*2.2)
+                :          mix(vec3(1.,.90,.58),vec3(.95,.42,.03),d*2.2);
+        gl_FragColor=vec4(col,a);
       }`
   });
   const heartBloomGeo = new T.BufferGeometry();
-  heartBloomGeo.setAttribute('position', new T.BufferAttribute(new Float32Array([0,0,0]), 3));
+  heartBloomGeo.setAttribute('position', new T.BufferAttribute(new Float32Array([0,0,0,0,0,0,0,0,0]),3));
+  heartBloomGeo.setAttribute('seed',     new T.BufferAttribute(new Float32Array([0,1,2]),1));
   const heartBloom = new T.Points(heartBloomGeo, heartBloomMat);
   roots[1].add(heartBloom);
 
@@ -1040,8 +1016,9 @@ export function createWorld(canvas) {
   }
 
   // Brave Young Ganesha standing sentinel at the gate
-  // pos y=0 so the STL body (height=3.8, floored at y=0 inside addDetail) stands on the temple floor
-  const guardianCh2 = createChildGanesha(roots[2], { mode: 'guardian', pos: [0, 0, -3.8], scale: 1.25 });
+  // Temple floor top = y(-2.8) + half-height(0.15) = -2.65
+  // addDetail floors the STL at y=0 inside the group → set group y = -2.65 so feet land on floor
+  const guardianCh2 = createChildGanesha(roots[2], { mode: 'guardian', pos: [0, -2.65, -3.8], scale: 1.25 });
 
   // ─── CH 3: SHIVA RETURNS — LORD SHIVA'S MAJESTIC ARRIVAL ───
   // Lord Shiva in ascetic grandeur with Jata, crescent Chandra, glowing Third Eye, Vasuki, Trishul & Damru
@@ -1448,8 +1425,9 @@ export function createWorld(canvas) {
   addDetail('Ganesha headless Body.stl', 3.2, restoredChild.group, 'headless');
 
   const elephantHead = new T.Group(); roots[7].add(elephantHead);
-  // Use paintDeity 'elephantHead' — warm grey divine skin with rose ear-flush and gold crown
-  addDetail('Ganesha Head ( elephent head ).stl', 2.0, elephantHead, 'elephantHead', null);
+  // Head height = 1.2 (≈37% of 3.2 body) so it looks proportionate, not oversized
+  // paintDeity 'elephantHead' — warm divine grey skin, rose ear-flush, gold crown
+  addDetail('Ganesha Head ( elephent head ).stl', 1.2, elephantHead, 'elephantHead', null);
 
   // Sacred Lotus Flowers at Base
   for (let i = 0; i < 14; i++) {
@@ -1925,9 +1903,12 @@ export function createWorld(canvas) {
         flyingTrishul.position.set(fx, fy, fz);
 
         flyingTrishul.rotation.set(
-          Math.PI + 0.22 * (1.0 - f),
-          -0.35 * (1.0 - f),
-          0
+          // STL prongs = +Y. addDetail bakes rotateX(-PI/2) → prongs now +Z.
+          // Camera looks in -Z direction, so prongs must face -Z = rotate PI around X.
+          // Add launch loft: starts slightly tilted back (PI + 0.25), snaps straight by f=1 (PI).
+          Math.PI + 0.25 * (1.0 - f),  // prongs dead at camera — loft eases to zero
+          -0.18 * (1.0 - f),            // yaw straightens as it homes
+          0                              // zero roll — arrow-straight
         );
 
         const sc = T.MathUtils.lerp(0.55, 3.8, accel);
@@ -2017,8 +1998,8 @@ export function createWorld(canvas) {
         //   group.y (animated) + addDetail height (3.2, fixed)
         const gY  = -2.2 - (1-beats.restore)*0.3;  // matches restoredChild.group.y above
         const top = gY + 3.2;                        // top of headless body
-        // Head descends from y=5.5 down to sit exactly on body top (y=top)
-        // addDetail translated head mesh so base=0 inside group, so group.y=top aligns them
+        // Head height=1.2 → addDetail sets mesh base=0, top=1.2 inside elephantHead group
+        // elephantHead.position.y = top means head base sits exactly on body top
         elephantHead.position.set(1.6, T.MathUtils.lerp(5.5, top, beats.restore), 0.0);
         elephantHead.rotation.y = Math.sin(t * 0.4) * 0.04; // subtle divine sway
       }
