@@ -37,8 +37,7 @@ export function createWorld(canvas) {
     color: 0xffc94a, metalness: 0.95, roughness: 0.18,
     emissive: 0x8a5a00, emissiveIntensity: 0.12
   });
-  const paleGold = new T.MeshStandardMaterial({
-    color: 0xe8c87a, metalness: 0.62, roughness: 0.42,
+  const paleGold = new T.MeshStandardMaterial({    color: 0xe8c87a, metalness: 0.62, roughness: 0.42,
     emissive: 0x5a3a00, emissiveIntensity: 0.08
   });
   const darkGold = new T.MeshStandardMaterial({
@@ -206,6 +205,66 @@ export function createWorld(canvas) {
     geo.computeVertexNormals();
     return mesh(geo, mat, parent, pos, scale);
   }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // ─── DEITY MATERIAL LIBRARY (goal2.md spec — cinematic Indian mythology) ───
+  // All models are single-mesh STLs. No vertex-Y classification.
+  // Each deity gets one dominant skin material that reads correctly under
+  // ACES tone-mapping + warm key / cool rim lighting.
+  //
+  // NOTE: Full material separation (skin vs dhoti vs hair vs jewellery)
+  // requires re-exporting each STL as a multi-mesh GLB from Blender.
+  // Until that happens, the dominant surface (skin) drives the read.
+  // ═══════════════════════════════════════════════════════════════════
+
+  function mat(color, roughness, metalness, emissive = 0x000000, emissiveIntensity = 0) {
+    return new T.MeshStandardMaterial({
+      color, roughness, metalness,
+      emissive, emissiveIntensity,
+      side: T.DoubleSide,
+      envMapIntensity: 0.6
+    });
+  }
+
+  const DM = {
+    // ── SHIVA ──────────────────────────────────────────────────────────
+    // goal2: #28539A, roughness 0.57, metalness 0 — muted, NOT neon blue
+    shivaSkin:    mat(0x28539a, 0.57, 0.00, 0x05122a, 0.18),
+    shivaDhoti:   mat(0xb97b35, 0.88, 0.00),
+    shivaHair:    mat(0x17191e, 0.78, 0.00),
+    shivaGold:    mat(0xbe9749, 0.29, 0.75, 0x3a2000, 0.08),
+    shivaTrishulHead: mat(0xaa873c, 0.26, 0.84),
+    shivaMoon:    mat(0xe8edf4, 0.30, 0.00, 0xafc7e6, 0.20),
+
+    // ── PARVATI ────────────────────────────────────────────────────────
+    // goal2: #C98961, roughness 0.54 — warm wheat, NOT orange terracotta
+    parvatiSkin:  mat(0xc98961, 0.54, 0.00, 0x3a1208, 0.12),
+    parvatiSari:  mat(0xb45f31, 0.88, 0.00),
+    parvatiBlouse:mat(0x7a352a, 0.82, 0.00),
+    parvatiHair:  mat(0x171416, 0.78, 0.00),
+    parvatiGold:  mat(0xc49a49, 0.28, 0.74, 0x3a2000, 0.08),
+
+    // ── CHILD GANESHA ──────────────────────────────────────────────────
+    // goal2: #D7A77C, roughness 0.57 — warm peach, NOT ivory marble
+    childSkin:    mat(0xd7a77c, 0.57, 0.00, 0x2a0e00, 0.10),
+    childHair:    mat(0x211914, 0.77, 0.00),
+    childDhoti:   mat(0xd39b32, 0.86, 0.00),
+    childGold:    mat(0xc99b43, 0.27, 0.72, 0x3a1e00, 0.06),
+
+    // ── SHAKTI / DURGA ─────────────────────────────────────────────────
+    // goal2: #D6A27A, roughness 0.50 — luminous warm skin
+    shaktiSkin:   mat(0xd6a27a, 0.50, 0.00, 0x2a0e00, 0.10),
+    shaktiSari:   mat(0x9e1828, 0.82, 0.00),
+    shaktiBlouse: mat(0x4f111b, 0.84, 0.00),
+    shaktiGold:   mat(0xc59a43, 0.25, 0.78, 0x3a1e00, 0.08),
+
+    // ── FULL GANESHA (elephant head + body) ────────────────────────────
+    // goal2: #D69773, roughness 0.55 — warm peach/rose-orange, not flat ivory
+    ganeshaSkin:  mat(0xd69773, 0.55, 0.00, 0x2a0e00, 0.10),
+    ganeshaDhoti: mat(0xcc8a2d, 0.86, 0.00),
+    ganeshaGold:  mat(0xc6a04b, 0.26, 0.75, 0x3a1e00, 0.08),
+    ganeshaTusk:  mat(0xe8dfc9, 0.39, 0.00),
+  };
 
   // ─── HALO ───
   function halo(parent, r = 3) {
@@ -395,7 +454,8 @@ export function createWorld(canvas) {
     geometry.scale(5.2 / size.y, 5.2 / size.y, 5.2 / size.y);
     geometry.translate(0, 0.88, 0);
 
-    const ganeshaMat = paintDeity(geometry, 'ganesha');
+    // FULL GANESHA SKIN — goal2 #D69773 warm peach/rose, NOT flat ivory
+    const ganeshaMat = DM.ganeshaSkin;
     for (const holder of sculptureHolders) {
       mesh(geometry, ganeshaMat, holder);
     }
@@ -481,17 +541,9 @@ export function createWorld(canvas) {
       const centreY = (bb.max.y + bb.min.y) / 2;
       geo.translate(-centreX, -centreY, -bb.min.z);
 
-      // Warm rose-wheat skin tone — Chola bronze patina, warm emissive so it reads
-      // correctly under the dark Kailash lighting without washing out
-      const parvatiBodMat = new T.MeshStandardMaterial({
-        color:    0xc87848,   // rich terracotta-rose — classic Parvati Chola bronze
-        metalness: 0.08,
-        roughness: 0.58,
-        emissive:  0x5a1800,
-        emissiveIntensity: 0.22,
-        side: T.DoubleSide
-      });
-      const bodyMesh = new T.Mesh(geo, parvatiBodMat);
+      // PARVATI SKIN — goal2 #C98961 warm wheat, NOT orange terracotta
+      // Single-mesh STL: dominant is skin. Low emissive keeps her warm in dark scenes.
+      const bodyMesh = new T.Mesh(geo, DM.parvatiSkin);
       bodyMesh.scale.setScalar(fitScale);
       bodyMesh.rotation.x = -Math.PI / 2;
       bodyMesh.position.y = -2.0;
@@ -557,19 +609,11 @@ export function createWorld(canvas) {
       const centreY = (bb.max.y + bb.min.y) / 2;
       geo.translate(-centreX, -centreY, -bb.min.z);
 
-      // Deep Neelkantha blue — muted indigo, strong emissive so colour reads true
-      // under dark mountain lighting. Not bright cobalt — deep divine blue.
-      const shivaBodMat = new T.MeshStandardMaterial({
-        color:    0x1e3878,   // deep indigo-blue Neelkantha
-        metalness: 0.05,
-        roughness: 0.60,
-        emissive:  0x0a1840,
-        emissiveIntensity: 0.35,
-        side: T.DoubleSide
-      });
-      const bodyMesh = new T.Mesh(geo, shivaBodMat);
+      // SHIVA SKIN — goal2 #28539A muted indigo, NOT bright cobalt
+      // Single-mesh STL: dominant colour is skin. Emissive ensures it reads
+      // in the dark Kailash chapter without over-brightening under key light.
+      const bodyMesh = new T.Mesh(geo, DM.shivaSkin);
       bodyMesh.scale.setScalar(fitScale);
-      // STL exported Z-up: rotate -90° on X to stand upright, then face camera (+Z)
       bodyMesh.rotation.x = -Math.PI / 2;
       bodyMesh.position.y = -2.0;
       g.add(bodyMesh);
@@ -644,12 +688,14 @@ export function createWorld(canvas) {
         geo.translate(-centreX, -bb.min.y, -centreZ);
       }
 
-      const bodyMesh = new T.Mesh(geo, paintDeity(geo, 'shakti', useZUp ? 'z' : 'y'));
+      // SHAKTI SKIN — goal2 #D6A27A luminous warm skin, sari #9E1828 deep crimson
+      // Single-mesh STL dominant = skin. Sari covers most of lower body but
+      // skin is the face/arms — use skin colour as primary read.
+      const bodyMesh = new T.Mesh(geo, DM.shaktiSkin);
       bodyMesh.scale.setScalar(fitScale);
       if (useZUp) bodyMesh.rotation.x = -Math.PI / 2;
       bodyMesh.position.y = -2.0;
       g.add(bodyMesh);
-
       // Reposition halo to top of loaded model
       const totalH = fitH;
       shaktiHalo.position.y = totalH * 0.88 - 2.0;
@@ -692,8 +738,8 @@ export function createWorld(canvas) {
       cloned.scale(s, s, s);
       cloned.translate(0, fitH * 0.5, 0);   // floor geometry at y=0
 
-      // Split into head (above cut) and body (below cut) for independent animation
-      const mat = paintDeity(cloned, 'child');
+      // CHILD GANESHA SKIN — goal2 #D7A77C warm peach, NOT ivory marble
+      const mat = DM.childSkin;
       const posAttr = cloned.attributes.position;
       const idxArr  = cloned.index ? cloned.index.array : null;
 
@@ -1211,7 +1257,8 @@ export function createWorld(canvas) {
   scene.add(shockwaveMesh);
 
   const fallenBody = new T.Group(); battle.add(fallenBody);
-  addDetail('Ganesha headless Body.stl', 2.8, fallenBody, 'headless');
+  // Headless body — child skin material (warm peach), not vertex-Y classification
+  addDetail('Ganesha headless Body.stl', 2.8, fallenBody, null, DM.childSkin);
   fallenBody.position.set(-2.2, -2.2, 0);
 
   const impactLight = new T.PointLight(0xffe5bd, 0, 15);
@@ -1426,10 +1473,11 @@ export function createWorld(canvas) {
   const parvatiCh7 = createParvati(roots[7], { mode: 'rebirth_side', pos: [4.6, -0.4, 0.4], scale: 1.08, rotY: -0.45 });
 
   const restoredChild = {group:new T.Group()}; roots[7].add(restoredChild.group);
-  addDetail('Ganesha headless Body.stl', 3.2, restoredChild.group, 'headless');
+  addDetail('Ganesha headless Body.stl', 3.2, restoredChild.group, null, DM.childSkin);
 
   const elephantHead = new T.Group(); roots[7].add(elephantHead);
-  addDetail('Ganesha Head ( elephent head ).stl', 1.2, elephantHead, 'elephantHead', null);
+  // Elephant head — warm Ganesha skin (goal2 #D69773)
+  addDetail('Ganesha Head ( elephent head ).stl', 1.2, elephantHead, null, DM.ganeshaSkin);
 
   // ── REBIRTH MAGIC PARTICLE SYSTEM (luxury cinematic, not cartoonish) ──
   // Three layers rendered in roots[7] local space, Ganesha centre ≈ (1.6, 0.8, 0)
