@@ -1,4 +1,4 @@
-import { createWorld } from './world.js?v=assets30';
+import { createWorld } from './world.js?v=assets31';
 import { chapterAt, chapterOpacity } from './timeline.js?v=story16';
 
 const $ = s => document.querySelector(s);
@@ -138,7 +138,7 @@ if (modakBtn) {
 // -------------------------------------------------------------
 // CINEMATIC PROCEDURAL WEB AUDIO ENGINE
 // -------------------------------------------------------------
-let audio, master, biquadFilter, compressor, scoreTimer, soundOn = false, beat = 0;
+let audio, master, biquadFilter, compressor, soundOn = false;
 let bgMusicSource = null, bgMusicGain = null;
 
 function createAudio() {
@@ -160,59 +160,11 @@ function createAudio() {
   compressor.release.setValueAtTime(0.25, audio.currentTime);
 
   master.connect(biquadFilter).connect(compressor).connect(audio.destination);
-
-  // Sacred Om Continuous Planetary Drone (136.1Hz & subharmonics)
-  [68.05, 136.1, 204.15, 272.2].forEach((freq, i) => {
-    const osc = audio.createOscillator(), gain = audio.createGain();
-    osc.frequency.value = freq;
-    gain.gain.value = 0.025 / (i + 1);
-    osc.connect(gain).connect(master);
-    osc.start();
-  });
-
-  // Rhythm & Ambience Sequencer Loop (every 500ms)
-  scoreTimer = setInterval(() => {
-    if (!soundOn || document.hidden) return;
-    beat++;
-    // Original pentatonic melody with a quieter low register beneath the sea.
-    const melody = [0, 4, 7, 9, 7, 4, 2, 0, 4, 7, 12, 9, 7, 4, 2, -3];
-    if (lastIndex !== 4 && lastIndex !== 9 && beat % 2 === 0) {
-      const frequency = (lastIndex === 10 ? 130.81 : 261.63) * 2 ** (melody[(beat/2)%melody.length]/12);
-      tone(frequency, audio.currentTime, 1.7, .035, 'sine');
-      tone(frequency*2, audio.currentTime+.04, 1.2, .008, 'sine');
-    }
-
-    // CHAPTER 9: High-Energy Maharashtrian Dhol-Tasha Rhythm
-    if (lastIndex === 9) {
-      const step = beat % 16;
-      // Dhol (deep boom on 0, 6, 8, 12)
-      if ([0, 6, 8, 12].includes(step)) {
-        dhol(step === 0 || step === 8);
-      }
-      // Tasha (syncopated sharp rimshots)
-      if ([2, 4, 7, 10, 14, 15].includes(step)) {
-        tasha(step === 2 || step === 10);
-      }
-    }
-    // CHAPTER 7: Rebirth - Celestial bells
-    else if (lastIndex === 7 && beat % 4 === 0) {
-      bell([528, 639, 741, 852][Math.floor(beat / 4) % 4], 3.5);
-    }
-    // CHAPTER 5: Shakti - Roaring rumble pulse
-    else if (lastIndex === 5 && beat % 3 === 0) {
-      tone(42, audio.currentTime, 0.8, 0.12, 'sawtooth');
-    }
-    // CHAPTER 3 & 4: Shiva & Battle - Damru roll
-    else if ((lastIndex === 3 || lastIndex === 4) && beat % 6 === 0) {
-      damru();
-    }
-    // Standard meditative temple bell cycle
-    else if (beat % 8 === 0 && lastIndex !== 10) {
-      bell([261.63, 293.66, 392, 523.25][Math.floor(beat / 8) % 4], 4.2);
-    }
-  }, 480);
+  // All sound now comes from the Ekadantaya flute MP3 + cinematic bell cues.
+  // Procedural Om drone and sequencer removed.
 }
 
+// tone() — helper for bell() cinematic cues only
 function tone(frequency, when, length, volume, type = 'sine') {
   if (!audio) return;
   const osc = audio.createOscillator(), gain = audio.createGain();
@@ -226,75 +178,13 @@ function tone(frequency, when, length, volume, type = 'sine') {
   osc.stop(when + length + 0.1);
 }
 
-// Authentic Metallic Temple Bell with Natural Partials
+// Temple bell — cinematic chapter-entrance cues
 function bell(frequency = 396, decay = 4.2) {
   if (!soundOn || !audio) return;
   const now = audio.currentTime;
-  const partials = [1.0, 2.01, 2.76, 4.07, 5.42];
-  partials.forEach((ratio, i) => {
+  [1.0, 2.01, 2.76, 4.07, 5.42].forEach((ratio, i) => {
     tone(frequency * ratio, now, Math.max(0.6, decay - i * 0.7), 0.075 / (i + 1));
   });
-}
-
-// Sacred Conch Shell (Shankha) Sound
-function conch() {
-  if (!soundOn || !audio) return;
-  const now = audio.currentTime;
-  [174, 348, 522, 696].forEach((f, i) => {
-    const osc = audio.createOscillator(), gain = audio.createGain();
-    osc.type = i % 2 === 0 ? 'sawtooth' : 'triangle';
-    osc.frequency.setValueAtTime(f, now);
-    osc.frequency.linearRampToValueAtTime(f * 1.03, now + 1.8);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(0.055 / (i + 1), now + 0.5);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.6);
-    osc.connect(gain).connect(master);
-    osc.start(now);
-    osc.stop(now + 2.7);
-  });
-}
-
-// Deep Sub-bass Heartbeat
-function heartbeat() {
-  if (!soundOn || !audio) return;
-  const now = audio.currentTime;
-  // First thump
-  tone(65, now, 0.18, 0.22, 'sine');
-  tone(38, now, 0.22, 0.18, 'triangle');
-  // Second thump (delayed 0.28s)
-  tone(58, now + 0.28, 0.22, 0.24, 'sine');
-  tone(32, now + 0.28, 0.26, 0.2, 'triangle');
-}
-
-// Shiva's Damru Roll
-function damru() {
-  if (!soundOn || !audio) return;
-  const now = audio.currentTime;
-  for (let i = 0; i < 4; i++) {
-    tone(380 + (i % 2) * 90, now + i * 0.09, 0.06, 0.07, 'triangle');
-  }
-}
-
-// Dhol Percussion (Punchy low boom)
-function dhol(accent = false) {
-  if (!soundOn || !audio) return;
-  const now = audio.currentTime;
-  const osc = audio.createOscillator(), gain = audio.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(accent ? 115 : 92, now);
-  osc.frequency.exponentialRampToValueAtTime(36, now + 0.24);
-  gain.gain.setValueAtTime(accent ? 0.32 : 0.22, now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-  osc.connect(gain).connect(master);
-  osc.start(now);
-  osc.stop(now + 0.36);
-}
-
-// Tasha Percussion (Snappy bright rimshot)
-function tasha(accent = false) {
-  if (!soundOn || !audio) return;
-  const now = audio.currentTime;
-  tone(accent ? 680 : 540, now, 0.06, accent ? 0.14 : 0.09, 'triangle');
 }
 
 async function triggerSoundStart() {
@@ -363,7 +253,6 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 addEventListener('pagehide', () => {
-  clearInterval(scoreTimer);
   audio?.close();
 });
 
@@ -549,23 +438,12 @@ function updateStory() {
       else a.removeAttribute('aria-current');
     });
 
-    // Cinematic Chapter Entrance Sound Cues
+    // Cinematic Chapter Entrance Bell Cues
     if (lastIndex >= 0 && soundOn) {
       if (index === 7) {
-        // Rebirth: Divine conch + heartbeat + flash!
         flashScreen();
-        conch();
-        heartbeat();
-      } else if (index === 4) {
-        // Battle: Damru + thunderous crash
-        damru();
-        tone(48, audio.currentTime, 0.6, 0.15, 'sawtooth');
-      } else if (index === 9) {
-        // Ganesh Chaturthi: Bell and opening Dhol hit
-        bell(528, 3.5);
-        dhol(true);
+        bell(528, 4.5);
       } else if (index === 10) {
-        // Visarjan: Soft fading bell
         bell(261.63, 5.0);
       } else {
         bell(261.63);
