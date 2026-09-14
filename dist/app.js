@@ -1,4 +1,4 @@
-import { createWorld } from './world.js?v=assets28';
+import { createWorld } from './world.js?v=assets30';
 import { chapterAt, chapterOpacity } from './timeline.js?v=story16';
 
 const $ = s => document.querySelector(s);
@@ -139,6 +139,7 @@ if (modakBtn) {
 // CINEMATIC PROCEDURAL WEB AUDIO ENGINE
 // -------------------------------------------------------------
 let audio, master, biquadFilter, compressor, scoreTimer, soundOn = false, beat = 0;
+let bgMusicSource = null, bgMusicGain = null;
 
 function createAudio() {
   audio = new (window.AudioContext || window.webkitAudioContext)();
@@ -306,6 +307,33 @@ async function triggerSoundStart() {
     $('#sound-label').textContent = 'SOUND ON';
     document.body.classList.add('sound-on');
     bell(261.63, 4.5);
+
+    // ── EKADANTAYA FLUTE — background devotional music ──
+    // Load once, loop forever, route through master chain so it
+    // responds to SOUND OFF toggle, biquad filter (Visarjan underwater),
+    // and the dynamics compressor automatically.
+    if (!bgMusicSource) {
+      try {
+        const res  = await fetch('./assets/Ekadantaya Vakratundaya Gouritanyay Dheemahi Flute Cover  Instrumental.mp3');
+        const buf  = await res.arrayBuffer();
+        const decoded = await audio.decodeAudioData(buf);
+
+        bgMusicGain = audio.createGain();
+        bgMusicGain.gain.value = 0;               // start silent
+        bgMusicGain.connect(master);               // flows through biquad → compressor → destination
+
+        bgMusicSource = audio.createBufferSource();
+        bgMusicSource.buffer = decoded;
+        bgMusicSource.loop   = true;
+        bgMusicSource.connect(bgMusicGain);
+        bgMusicSource.start(0);
+
+        // Fade in gently over 3 seconds — sits under procedural sounds
+        bgMusicGain.gain.setTargetAtTime(0.38, audio.currentTime, 3.0);
+      } catch (e) {
+        console.warn('Background music could not load:', e);
+      }
+    }
   } catch (err) {
     console.error(err);
     $('#sound-label').textContent = 'SOUND UNAVAILABLE';
@@ -318,6 +346,8 @@ $('#sound').onclick = async () => {
   } else {
     soundOn = false;
     master.gain.setTargetAtTime(0, audio.currentTime, 0.3);
+    // Fade out background music separately (it goes to near-zero, not cut)
+    if (bgMusicGain) bgMusicGain.gain.setTargetAtTime(0, audio.currentTime, 0.5);
     $('#sound').setAttribute('aria-pressed', 'false');
     $('#sound-label').textContent = 'SOUND OFF';
     document.body.classList.remove('sound-on');

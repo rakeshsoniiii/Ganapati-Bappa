@@ -31,40 +31,6 @@ export function createWorld(canvas) {
     return g;
   });
 
-  // ─── PROCEDURAL MICRO-SURFACE BUMP MAP GENERATOR ───
-  function createProceduralTexture(type, size = 256) {
-    const c = document.createElement('canvas');
-    c.width = c.height = size;
-    const ctx = c.getContext('2d');
-    const img = ctx.createImageData(size, size);
-    const d = img.data;
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        const idx = (y * size + x) * 4;
-        let val = 128;
-        if (type === 'hammered') {
-          const n1 = Math.sin(x * 0.15) * Math.cos(y * 0.15);
-          const n2 = Math.sin(x * 0.35 + y * 0.2) * 0.5;
-          const n3 = Math.cos((x - y) * 0.1) * 0.35;
-          val = Math.floor(128 + (n1 + n2 + n3) * 55);
-        } else if (type === 'stone') {
-          const n1 = (Math.random() - 0.5) * 42;
-          const n2 = Math.sin(x * 0.08 + y * 0.04) * 22;
-          val = Math.floor(128 + n1 + n2);
-        } else if (type === 'cloth') {
-          const weave = Math.sin(x * 0.5) * 0.5 + Math.sin(y * 0.5) * 0.5;
-          val = Math.floor(128 + weave * 38);
-        }
-        val = Math.max(0, Math.min(255, val));
-        d[idx] = val; d[idx + 1] = val; d[idx + 2] = val; d[idx + 3] = 255;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-    const tex = new T.CanvasTexture(c);
-    tex.wrapS = tex.wrapT = T.RepeatWrapping;
-    tex.repeat.set(type === 'cloth' ? 6 : 4, type === 'cloth' ? 6 : 4);
-    return tex;
-  }
 
   // ─── PBR LUXURY MATERIALS (MUSEUM SCULPTURE GRADE) ───
   const gold = new T.MeshStandardMaterial({
@@ -244,18 +210,31 @@ export function createWorld(canvas) {
   // ─── HALO ───
   function halo(parent, r = 3) {
     const g = new T.Group(); parent.add(g);
+    // 5 concentric glow rings (cheap torus geometry)
     for (let i = 0; i < 5; i++) {
       ring(g, r + i * 0.14, 0.012 + (i === 0 ? 0.005 : 0), [0, 0, -0.12], i % 2 ? glow : gold);
     }
+    // Outer bead ring — instanced sphere (1 draw call instead of 72)
     const pts = [];
     for (let i = 0; i < 72; i++) {
       const a = i / 72 * Math.PI * 2;
       pts.push([Math.cos(a) * (r + 0.55), Math.sin(a) * (r + 0.55), -0.12]);
-      const petal = ring(g, 0.18, 0.01, [Math.cos(a) * (r + 0.25), Math.sin(a) * (r + 0.25), -0.12], darkGold);
-      petal.scale.set(0.45, 1.5, 1);
-      petal.rotation.z = a - Math.PI / 2;
     }
     beads(g, pts, 0.024, glow);
+    // Petal accent — 16 instanced petals instead of 72 individual torus meshes
+    // Each petal is a flattened torus; use InstancedMesh for a single draw call.
+    const petalGeo = new T.TorusGeometry(0.18, 0.01, 6, 24);
+    const petalInst = new T.InstancedMesh(petalGeo, darkGold, 16);
+    const dummy = new T.Object3D();
+    for (let i = 0; i < 16; i++) {
+      const a = i / 16 * Math.PI * 2;
+      dummy.position.set(Math.cos(a) * (r + 0.25), Math.sin(a) * (r + 0.25), -0.12);
+      dummy.scale.set(0.45, 1.5, 1);
+      dummy.rotation.set(0, 0, a - Math.PI / 2);
+      dummy.updateMatrix();
+      petalInst.setMatrixAt(i, dummy.matrix);
+    }
+    g.add(petalInst);
     return g;
   }
 
@@ -841,8 +820,8 @@ export function createWorld(canvas) {
   // Ganesha at pos[ 1.2, -1.0] scale=1.15 → chest/heart≈ ( 1.40, 1.70, 0.3)
   // ══════════════════════════════════════════════════════
 
-  // ── STREAM A: main golden river — 2400 large soft orbs ──
-  const pranaCount  = 2400;
+  // ── STREAM A: main golden river — 800 large soft orbs (GPU-friendly) ──
+  const pranaCount  = 800;
   const pranaGeo    = new T.BufferGeometry();
   const pranaSeed   = new Float32Array(pranaCount);
   const pranaStream = new Float32Array(pranaCount); // 0=left hand  1=right hand
@@ -873,7 +852,7 @@ export function createWorld(canvas) {
         vLife=sin(t*3.14159);
         vec4 mv=modelViewMatrix*vec4(p,1.);
         gl_Position=projectionMatrix*mv;
-        gl_PointSize=clamp((22.+seed*60.+vLife*50.)/-mv.z,2.,130.);
+        gl_PointSize=clamp((22.+seed*60.+vLife*50.)/-mv.z,2.,55.);
       }`,
     fragmentShader: `
       varying float vLife; varying float vS;
@@ -889,8 +868,8 @@ export function createWorld(canvas) {
   const pranaParticles = new T.Points(pranaGeo, pranaMat);
   roots[1].add(pranaParticles);
 
-  // ── STREAM B: 1200 fast escaping sparks ──
-  const glitterCount = 1200;
+  // ── STREAM B: 400 fast escaping sparks (GPU-friendly) ──
+  const glitterCount = 400;
   const glitterGeo   = new T.BufferGeometry();
   const glitterSeed  = new Float32Array(glitterCount);
   for (let i=0;i<glitterCount;i++) glitterSeed[i]=Math.random();
@@ -912,7 +891,7 @@ export function createWorld(canvas) {
         vec4 mv=modelViewMatrix*vec4(p,1.);
         gl_Position=projectionMatrix*mv;
         vA=sin(t*3.14159)*(.6+seed*.4);
-        gl_PointSize=clamp((6.+seed*14.)/-mv.z,1.,22.);
+        gl_PointSize=clamp((6.+seed*14.)/-mv.z,1.,14.);
       }`,
     fragmentShader: `
       varying float vA;
@@ -1430,8 +1409,8 @@ export function createWorld(canvas) {
   // ── REBIRTH MAGIC PARTICLE SYSTEM (luxury cinematic, not cartoonish) ──
   // Three layers rendered in roots[7] local space, Ganesha centre ≈ (1.6, 0.8, 0)
 
-  // Layer 1: FUSION VORTEX — spirals inward to neck joint as head meets body (local 0.45→0.60)
-  const fusionCount = 800;
+  // Layer 1: FUSION VORTEX — 400 particles (optimized from 800)
+  const fusionCount = 400;
   const fusGeo = new T.BufferGeometry();
   const fusSeed = new Float32Array(fusionCount);
   for (let i = 0; i < fusionCount; i++) fusSeed[i] = i / fusionCount;
@@ -1476,8 +1455,8 @@ export function createWorld(canvas) {
   const fusionParticles = new T.Points(fusGeo, fusMat);
   roots[7].add(fusionParticles);
 
-  // Layer 2: DIVINE EXPLOSION — radial burst outward when Ganesha fully appears (local 0.58→0.75)
-  const burstCount = 1200;
+  // Layer 2: DIVINE EXPLOSION — 500 particles (optimized from 1200)
+  const burstCount = 500;
   const burstGeo = new T.BufferGeometry();
   const burstSeed = new Float32Array(burstCount);
   const burstDir  = new Float32Array(burstCount * 3); // pre-computed random directions
@@ -1529,8 +1508,8 @@ export function createWorld(canvas) {
   const burstParticles = new T.Points(burstGeo, burstMat);
   roots[7].add(burstParticles);
 
-  // Layer 3: FLOATING DIVINE DUST — soft gold motes drift upward continuously after rebirth
-  const dustCh7Count = 320;
+  // Layer 3: FLOATING DIVINE DUST — 180 motes (optimized from 320)
+  const dustCh7Count = 180;
   const dustCh7Geo   = new T.BufferGeometry();
   const dustCh7Seed  = new Float32Array(dustCh7Count);
   for (let i = 0; i < dustCh7Count; i++) dustCh7Seed[i] = Math.random();
@@ -1844,13 +1823,13 @@ export function createWorld(canvas) {
 
   // ─── CAMERA POSES (ALL 12 CHAPTERS) ───
   const poses = [
-    [[0, 1.5, 15], [-3, 2.3, 11], [-1, 0.6, 0]],       // 00: Prologue
-    [[4.2, 1.8, 10], [-2.4, 1.2, 8], [0, 0.1, 0]],    // 01: Creation (Maa Parvati & Child Ganesha)
-    [[0, 1.5, 13], [0, 0.8, 4], [0, 0.2, -3.8]],      // 02: Guardian (Young Ganesha)
+    [[1.5, 1.2, 22], [-1.5, 1.8, 16], [2.0, 0.8, 0]],  // 00: Prologue — pulled back, centered on Ganesha
+    [[4.2, 1.8, 10], [-2.4, 1.2, 8], [0, 0.1, 0]],     // 01: Creation (Maa Parvati & Child Ganesha)
+    [[0, 1.5, 13], [0, 0.8, 4], [0, 0.2, -3.8]],       // 02: Guardian (Young Ganesha)
     [[-2.4, 1.4, 10], [3.2, 1.6, 8], [1.5, 0.8, 0]],   // 03: Shiva Arrival
-    [[5.5, 2.8, 12], [-4.5, 1.5, 8], [0, 0.6, 0]],    // 04: The Battle (Confrontation)
+    [[5.5, 2.8, 12], [-4.5, 1.5, 8], [0, 0.6, 0]],     // 04: The Battle (Confrontation)
     [[0, 1.4, 11], [1.8, 2.4, 8], [0, 1.0, 0]],        // 05: Shakti's Cosmic Rage
-    [[0, 1.8, 13], [2.8, 1.2, 8], [0.6, -0.1, -3.5]],     // 06: The Search (Elephant in majesty)
+    [[0, 1.8, 13], [2.8, 1.2, 8], [0.6, -0.1, -3.5]],  // 06: The Search (Elephant in majesty)
     [[5.2, 2.0, 12], [-1.8, 1.8, 10], [1.6, 0.6, 0]],  // 07: Rebirth (Shiva, Parvati & Ganesha)
     [[-1, 2, 11], [4, 2, 8], [0, 0.5, 0]],             // 08: Wisdom / Modak
     [[-5, 3, 14], [5, 2, 12], [0, 1, 0]],              // 09: Ganesh Chaturthi
@@ -1933,7 +1912,9 @@ export function createWorld(canvas) {
         camera.rotation.z = 0;
       }
 
-      roots.forEach((root, i) => root.visible = i === index || (local > .74 && i === index + 1));
+      // Only show next root near end of scroll to prevent bleed-through across 42-unit gap.
+      // Threshold 0.90 (was 0.74) keeps adjacent chapter hidden until close to transition.
+      roots.forEach((root, i) => root.visible = i === index || (local > .90 && i === index + 1));
 
       // Dynamic cinematic lighting
       key.position.set(4, 6, camera.position.z - 4);
@@ -1959,10 +1940,16 @@ export function createWorld(canvas) {
         topRim.color.setHex(0x9cc8e0); topRim.intensity = 1.8;
         scene.fog.color.setHex(0x040809); scene.fog.density = 0.028;
       } else if (index === 10) {
-        key.color.setHex(0xff9050); key.intensity = 115;
+        key.color.setHex(0xff9050); key.intensity = 80;
         rim.color.setHex(0x2a4a6a); rim.intensity = 55;
         topRim.color.setHex(0xffb050); topRim.intensity = 2.4;
         scene.fog.color.setHex(0x040910);
+      } else if (index === 0) {
+        // Prologue — warm sacred gold, dramatic rim from behind
+        key.color.setHex(0xffd08a); key.intensity = 55;
+        rim.color.setHex(0x8a6030); rim.intensity = 40;
+        topRim.color.setHex(0xffe4b0); topRim.intensity = 2.8;
+        scene.fog.color.setHex(0x04060a); scene.fog.density = 0.020;
       } else {
         key.color.setHex(0xffe4cb); key.intensity = 48;
         rim.color.setHex(0x4a7ea5); rim.intensity = 35;
