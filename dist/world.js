@@ -1425,9 +1425,154 @@ export function createWorld(canvas) {
   addDetail('Ganesha headless Body.stl', 3.2, restoredChild.group, 'headless');
 
   const elephantHead = new T.Group(); roots[7].add(elephantHead);
-  // Head height = 1.2 (≈37% of 3.2 body) so it looks proportionate, not oversized
-  // paintDeity 'elephantHead' — warm divine grey skin, rose ear-flush, gold crown
   addDetail('Ganesha Head ( elephent head ).stl', 1.2, elephantHead, 'elephantHead', null);
+
+  // ── REBIRTH MAGIC PARTICLE SYSTEM (luxury cinematic, not cartoonish) ──
+  // Three layers rendered in roots[7] local space, Ganesha centre ≈ (1.6, 0.8, 0)
+
+  // Layer 1: FUSION VORTEX — spirals inward to neck joint as head meets body (local 0.45→0.60)
+  const fusionCount = 800;
+  const fusGeo = new T.BufferGeometry();
+  const fusSeed = new Float32Array(fusionCount);
+  for (let i = 0; i < fusionCount; i++) fusSeed[i] = i / fusionCount;
+  fusGeo.setAttribute('position', new T.BufferAttribute(new Float32Array(fusionCount*3), 3));
+  fusGeo.setAttribute('seed',     new T.BufferAttribute(fusSeed, 1));
+
+  const fusMat = new T.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
+    uniforms: { time: { value: 0 }, phase: { value: 0 } }, // phase 0→1 = fusion progress
+    vertexShader: `
+      uniform float time, phase;
+      attribute float seed;
+      varying float vLife;
+      void main(){
+        // Particles start on a wide radius and spiral inward to neck joint (1.6, 1.2, 0)
+        float angle = seed * 6.2832 * 6.0 + time * 2.8;  // 6 full spiral rotations
+        float radius = mix(3.5, 0.06, phase) * (0.7 + seed * 0.3);
+        float height = mix(seed * 4.0 - 0.5, 1.2, phase); // converge on neck y=1.2
+        vec3 p = vec3(
+          1.6 + cos(angle) * radius,
+          height,
+          sin(angle) * radius * 0.6
+        );
+        // Altitude wobble for organic feel
+        p.y += sin(seed * 23.1 + time * 4.5) * (1.0 - phase) * 0.18;
+        vLife = sin(phase * 3.14159) * (0.4 + seed * 0.6);
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = clamp((12.0 + seed * 28.0 + vLife * 20.0) / -mv.z, 1.0, 55.0);
+      }`,
+    fragmentShader: `
+      varying float vLife;
+      void main(){
+        float d = length(gl_PointCoord - 0.5);
+        if (d > 0.5) discard;
+        // White-gold core bleeding to amber-orange edge
+        vec3 col = mix(vec3(1.0,0.97,0.82), vec3(1.0,0.62,0.08), d * 2.2);
+        float a = (1.0 - smoothstep(0.0, 0.50, d)) * vLife * 0.92;
+        gl_FragColor = vec4(col, a);
+      }`
+  });
+  const fusionParticles = new T.Points(fusGeo, fusMat);
+  roots[7].add(fusionParticles);
+
+  // Layer 2: DIVINE EXPLOSION — radial burst outward when Ganesha fully appears (local 0.58→0.75)
+  const burstCount = 1200;
+  const burstGeo = new T.BufferGeometry();
+  const burstSeed = new Float32Array(burstCount);
+  const burstDir  = new Float32Array(burstCount * 3); // pre-computed random directions
+  for (let i = 0; i < burstCount; i++) {
+    burstSeed[i] = Math.random();
+    const theta = Math.random() * Math.PI * 2;
+    const phi   = Math.acos(2 * Math.random() - 1);
+    burstDir[i*3]   = Math.sin(phi) * Math.cos(theta);
+    burstDir[i*3+1] = Math.abs(Math.cos(phi)) * 1.4; // bias upward
+    burstDir[i*3+2] = Math.sin(phi) * Math.sin(theta) * 0.6;
+  }
+  burstGeo.setAttribute('position', new T.BufferAttribute(new Float32Array(burstCount*3), 3));
+  burstGeo.setAttribute('seed',     new T.BufferAttribute(burstSeed, 1));
+  burstGeo.setAttribute('dir',      new T.BufferAttribute(burstDir,  3));
+
+  const burstMat = new T.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
+    uniforms: { time: { value: 0 }, blast: { value: 0 } }, // blast 0→1 = explosion progress
+    vertexShader: `
+      uniform float time, blast;
+      attribute float seed; attribute vec3 dir;
+      varying float vLife; varying float vSeed;
+      void main(){
+        vSeed = seed;
+        // Ease-out: fast start, slow end — like a real shockwave
+        float t = 1.0 - pow(1.0 - blast, 2.5);
+        float speed = 2.8 + seed * 4.5;
+        vec3 p = vec3(1.6, 0.8, 0.0) + dir * t * speed;
+        // Add trailing sparkle wiggle
+        p.x += sin(seed * 31.4 + time * 8.0) * t * 0.08;
+        p.y += cos(seed * 27.1 + time * 7.2) * t * 0.06;
+        vLife = (1.0 - blast) * (1.0 - blast); // quadratic fade
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = clamp((8.0 + seed * 30.0) * (1.0 - blast * 0.7) / -mv.z, 1.0, 80.0);
+      }`,
+    fragmentShader: `
+      varying float vLife; varying float vSeed;
+      void main(){
+        float d = length(gl_PointCoord - 0.5);
+        if (d > 0.5) discard;
+        // Vary colour per particle: pure white centre → gold → warm orange edge
+        vec3 col = mix(vec3(1.0,1.0,0.95), vec3(1.0,0.78,0.12), d * 2.0);
+        col = mix(col, vec3(1.0,0.42,0.04), max(0.0, d * 2.0 - 1.0));
+        float a = (1.0 - smoothstep(0.0, 0.50, d)) * vLife;
+        gl_FragColor = vec4(col, a * 0.95);
+      }`
+  });
+  const burstParticles = new T.Points(burstGeo, burstMat);
+  roots[7].add(burstParticles);
+
+  // Layer 3: FLOATING DIVINE DUST — soft gold motes drift upward continuously after rebirth
+  const dustCh7Count = 320;
+  const dustCh7Geo   = new T.BufferGeometry();
+  const dustCh7Seed  = new Float32Array(dustCh7Count);
+  for (let i = 0; i < dustCh7Count; i++) dustCh7Seed[i] = Math.random();
+  dustCh7Geo.setAttribute('position', new T.BufferAttribute(new Float32Array(dustCh7Count*3), 3));
+  dustCh7Geo.setAttribute('seed',     new T.BufferAttribute(dustCh7Seed, 1));
+
+  const dustCh7Mat = new T.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
+    uniforms: { time: { value: 0 }, presence: { value: 0 } },
+    vertexShader: `
+      uniform float time, presence;
+      attribute float seed;
+      varying float vA;
+      void main(){
+        // Motes drift in a soft column around Ganesha, drifting upward
+        float phase = fract(seed + time * 0.12);
+        float angle = seed * 6.2832 + time * 0.3;
+        float r     = 0.5 + seed * 1.8;
+        vec3 p = vec3(
+          1.6 + cos(angle) * r,
+          -2.0 + phase * 7.0,  // drift from floor to above head
+          sin(angle) * r * 0.55
+        );
+        p.x += sin(seed * 19.3 + time * 0.9) * 0.22;
+        p.z += cos(seed * 23.7 + time * 1.1) * 0.18;
+        // Fade in/out through lifecycle, modulated by presence
+        vA = sin(phase * 3.14159) * presence * (0.35 + seed * 0.45);
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = clamp((4.0 + seed * 10.0) / -mv.z, 1.0, 18.0);
+      }`,
+    fragmentShader: `
+      varying float vA;
+      void main(){
+        float d = length(gl_PointCoord - 0.5);
+        if (d > 0.5) discard;
+        vec3 col = mix(vec3(1.0,0.96,0.78), vec3(0.98,0.68,0.12), d * 2.0);
+        gl_FragColor = vec4(col, (1.0 - smoothstep(0.0, 0.50, d)) * vA);
+      }`
+  });
+  const dustCh7 = new T.Points(dustCh7Geo, dustCh7Mat);
+  roots[7].add(dustCh7);
 
   // Sacred Lotus Flowers at Base
   for (let i = 0; i < 14; i++) {
@@ -1988,22 +2133,46 @@ export function createWorld(canvas) {
 
       // Chapter 7: Rebirth
       restoredChild.group.visible = local < .58;
-      // Body rights itself from fallen angle as beats.restore goes 0→1
       restoredChild.group.rotation.z = (1-beats.restore)*1.15;
       restoredChild.group.position.set(1.6, -2.2-(1-beats.restore)*.3, 0);
 
       elephantHead.visible = local < .58;
       {
-        // Body mesh top in world space:
-        //   group.y (animated) + addDetail height (3.2, fixed)
-        const gY  = -2.2 - (1-beats.restore)*0.3;  // matches restoredChild.group.y above
-        const top = gY + 3.2;                        // top of headless body
-        // Head height=1.2 → addDetail sets mesh base=0, top=1.2 inside elephantHead group
-        // elephantHead.position.y = top means head base sits exactly on body top
+        const gY  = -2.2 - (1-beats.restore)*0.3;
+        const top = gY + 3.2;
         elephantHead.position.set(1.6, T.MathUtils.lerp(5.5, top, beats.restore), 0.0);
-        elephantHead.rotation.y = Math.sin(t * 0.4) * 0.04; // subtle divine sway
+        elephantHead.rotation.y = Math.sin(t * 0.4) * 0.04;
       }
       elephantHead.scale.setScalar(1.0);
+
+      // ── REBIRTH MAGIC PARTICLES ──
+      {
+        // Fusion vortex: active as head descends (local 0.45 → 0.60)
+        const fusPhase = T.MathUtils.smoothstep(local, 0.45, 0.60);
+        fusionParticles.visible = index === 7 && local >= 0.42 && local <= 0.65;
+        fusMat.uniforms.time.value  = t;
+        fusMat.uniforms.phase.value = fusPhase;
+
+        // Explosion burst: fires exactly when head snaps onto body (local 0.55 → 0.78)
+        const blastProgress = T.MathUtils.smoothstep(local, 0.56, 0.78);
+        burstParticles.visible = index === 7 && local >= 0.55 && local <= 0.85;
+        burstMat.uniforms.time.value  = t;
+        burstMat.uniforms.blast.value = blastProgress;
+
+        // Floating divine dust: appears after rebirth and persists
+        const dustPresence = T.MathUtils.smoothstep(local, 0.60, 0.75);
+        dustCh7.visible = index === 7 && local >= 0.58;
+        dustCh7Mat.uniforms.time.value     = t;
+        dustCh7Mat.uniforms.presence.value = dustPresence;
+
+        // Boost halo spin and scale during the explosion moment
+        if (local >= 0.58 && local < 0.78) {
+          const flash = T.MathUtils.smoothstep(local, 0.58, 0.65);
+          rebornHalo.scale.setScalar(1.0 + flash * 0.35);
+        } else {
+          rebornHalo.scale.setScalar(1.0);
+        }
+      }
       reborn.visible = local >= .58;
       reborn.scale.setScalar(.85 + beats.awaken*.15);
       rebornHalo.rotation.z = local * 0.3;
