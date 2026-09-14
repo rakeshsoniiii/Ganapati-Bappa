@@ -1,4 +1,4 @@
-import { createWorld } from './world.js?v=story16';
+import { createWorld } from './world.js?v=assets25';
 import { chapterAt, chapterOpacity } from './timeline.js?v=story16';
 
 const $ = s => document.querySelector(s);
@@ -26,7 +26,7 @@ $('#world').addEventListener('webglcontextlost', e => {
 });
 
 gsap.registerPlugin(ScrollTrigger);
-gsap.to(state, {
+const scrollTween = gsap.to(state, {
   progress: 1,
   ease: 'none',
   scrollTrigger: {
@@ -66,7 +66,10 @@ function go(index, instant = true) {
     top: targetY,
     behavior: (instant || reduceMotion.matches) ? 'instant' : 'smooth'
   });
-  if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.update();
+  if (typeof ScrollTrigger !== 'undefined') {
+    ScrollTrigger.update();
+    scrollTween.scrollTrigger?.getTween()?.progress(1);
+  }
 }
 
 $('#begin').onclick = () => {
@@ -113,7 +116,10 @@ $('#progress').addEventListener('pointerdown', () => { seeking = true; setPlayin
 addEventListener('pointerup', () => seeking = false);
 $('#progress').addEventListener('input', e => {
   setPlaying(false);
-  window.scrollTo({ top: Number(e.target.value) / 1000 * maxScroll(), behavior: 'instant' });
+  state.progress = Number(e.target.value) / 1000;
+  window.scrollTo({ top: state.progress * maxScroll(), behavior: 'instant' });
+  ScrollTrigger.update();
+  scrollTween.scrollTrigger?.getTween()?.progress(1);
 });
 
 // Modak interaction
@@ -471,6 +477,8 @@ function updateStory() {
   const progressPos = state.progress * maxScroll();
   const currentScroll = progressPos;
   const { index, local } = chapterAt(currentScroll, chapterOffsets, chapters.at(-1).offsetHeight);
+  document.body.classList.toggle('weapon-shot', index===4 && local>=.25 && local<.56);
+  document.body.classList.toggle('impact-black', index===4 && local>=.49 && local<.56);
   const opacity = chapterOpacity(index, local, reduceMotion.matches);
 
   // Screen shake classes during battle (4) and Shakti rage (5)

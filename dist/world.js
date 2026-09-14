@@ -724,14 +724,9 @@ export function createWorld(canvas) {
     g.rotation.y = rotY;
     parent.add(g);
 
-    // Blooming Golden Lotus Pedestal (Padmapitha)
-    lathe(g, [[0, -0.2], [0.68, -0.2], [0.74, -0.1], [0.62, 0.0], [0, 0.0]], darkGold);
-    for (let i = 0; i < 14; i++) {
-      const a = i / 14 * Math.PI * 2;
-      const pet = ell(g, [Math.cos(a) * 0.62, 0.02, Math.sin(a) * 0.62], [0.18, 0.04, 0.26], paleGold);
-      pet.rotation.y = -a + Math.PI / 2;
-      pet.rotation.x = -0.25;
-    }
+    // Simple stone floor disc — no pin/stick visible below feet
+    mesh(new T.CylinderGeometry(0.72, 0.80, 0.10, 32), stoneGray, g, [0, 0.05, 0]);
+    mesh(new T.CylinderGeometry(0.78, 0.72, 0.04, 32), gold, g, [0, 0.11, 0]);
 
     // No sphere heartGlow — divine light comes from prana particles instead
     const heartGlow = { visible: false, scale: { setScalar: () => {} } }; // stub so update() refs don't break
@@ -746,14 +741,14 @@ export function createWorld(canvas) {
 
     childGaneshaHolders.push({ head, body, mode });
 
-    // Guardian staff (shown in Ch02 & Ch04 sentinel mode)
+    // Guardian staff — positioned to the RIGHT side of the body, not through it
     const staff = new T.Group();
-    staff.position.set(0.22, 0.4, 0.38);
+    staff.position.set(0.85, 0.0, 0.0);   // clearly to the right, same floor level
     g.add(staff);
-    mesh(new T.CylinderGeometry(0.042, 0.052, 3.4, 16), treeBark, staff);
-    mesh(new T.ConeGeometry(0.12, 0.36, 14), sareeGoldBorder, staff, [0, 1.8, 0]);
-    ring(staff, 0.080, 0.018, [0, 1.6, 0], sareeGoldBorder).rotation.x = Math.PI / 2;
-    ring(staff, 0.075, 0.016, [0, -1.6, 0], antiqueBronze).rotation.x = Math.PI / 2;
+    mesh(new T.CylinderGeometry(0.042, 0.052, 3.4, 16), treeBark, staff, [0, 1.7, 0]);
+    mesh(new T.ConeGeometry(0.12, 0.36, 14), sareeGoldBorder, staff, [0, 3.55, 0]);
+    ring(staff, 0.080, 0.018, [0, 3.35, 0], sareeGoldBorder).rotation.x = Math.PI / 2;
+    ring(staff, 0.075, 0.016, [0, 0.1, 0], antiqueBronze).rotation.x = Math.PI / 2;
     staff.visible = mode !== 'creation';
 
     if (mode === 'creation') {
@@ -1044,8 +1039,9 @@ export function createWorld(canvas) {
     }
   }
 
-  // Brave Young Ganesha standing sentinel at the gate — raised y so feet land on floor
-  const guardianCh2 = createChildGanesha(roots[2], { mode: 'guardian', pos: [0, -0.15, -3.8], scale: 1.25 });
+  // Brave Young Ganesha standing sentinel at the gate
+  // pos y=0 so the STL body (height=3.8, floored at y=0 inside addDetail) stands on the temple floor
+  const guardianCh2 = createChildGanesha(roots[2], { mode: 'guardian', pos: [0, 0, -3.8], scale: 1.25 });
 
   // ─── CH 3: SHIVA RETURNS — LORD SHIVA'S MAJESTIC ARRIVAL ───
   // Lord Shiva in ascetic grandeur with Jata, crescent Chandra, glowing Third Eye, Vasuki, Trishul & Damru
@@ -2011,17 +2007,21 @@ export function createWorld(canvas) {
 
       // Chapter 7: Rebirth
       restoredChild.group.visible = local < .58;
+      // Body rights itself from fallen angle as beats.restore goes 0→1
       restoredChild.group.rotation.z = (1-beats.restore)*1.15;
-      // Body rests at y=-2.2 when fully upright
       restoredChild.group.position.set(1.6, -2.2-(1-beats.restore)*.3, 0);
+
       elephantHead.visible = local < .58;
-      // Body is 3.2 tall, floored at y=0 inside group which sits at -2.2 → body top = 1.0
-      // Head is 2.0 tall, addDetail centers it at height/2=1.0 inside elephantHead group
-      // So elephantHead.position.y must = body_world_top = restoredChild.group.y + 3.2
-      const bodyWorldY = -2.2 - (1-beats.restore)*0.3;
-      const bodyTop    = bodyWorldY + 3.2;
-      // Descends from +5 world-y down to exactly bodyTop
-      elephantHead.position.set(1.6, T.MathUtils.lerp(5.2, bodyTop, beats.restore), 0.05);
+      {
+        // Body mesh top in world space:
+        //   group.y (animated) + addDetail height (3.2, fixed)
+        const gY  = -2.2 - (1-beats.restore)*0.3;  // matches restoredChild.group.y above
+        const top = gY + 3.2;                        // top of headless body
+        // Head descends from y=5.5 down to sit exactly on body top (y=top)
+        // addDetail translated head mesh so base=0 inside group, so group.y=top aligns them
+        elephantHead.position.set(1.6, T.MathUtils.lerp(5.5, top, beats.restore), 0.0);
+        elephantHead.rotation.y = Math.sin(t * 0.4) * 0.04; // subtle divine sway
+      }
       elephantHead.scale.setScalar(1.0);
       reborn.visible = local >= .58;
       reborn.scale.setScalar(.85 + beats.awaken*.15);
