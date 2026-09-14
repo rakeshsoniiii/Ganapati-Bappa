@@ -282,13 +282,15 @@ export function createWorld(canvas) {
     const centerX = (bb.max.x+bb.min.x)/2;
     // Palette: [skin/body, garment/cloth, dark accent]
     const palette = {
-      shiva:        [0x3a72b8, 0xd4882a, 0x1a1e28],  // deeper cobalt | saffron dhoti | dark
-      parvati:      [0xe8c4a0, 0xc8182e, 0x1a0c10],  // warm wheat skin | vermillion saree | blouse
-      shakti:       [0xe8c4a0, 0xaa0e1c, 0x280810],
-      child:        [0xf0d4a8, 0xc88a10, 0x28180c],  // warm ivory skin | golden dhoti
+      // Shiva: deep indigo-blue Neelkantha skin (not bright cobalt), deep burnt-saffron dhoti
+      shiva:        [0x1e3a70, 0xa85e18, 0x0e1420],
+      // Parvati: warm rose-wheat skin (not pale cream), deep temple vermillion saree
+      parvati:      [0xd4906a, 0xa01020, 0x180810],
+      shakti:       [0xd4906a, 0x8c0a18, 0x200408],
+      child:        [0xf0d4a8, 0xc88a10, 0x28180c],
       headless:     [0xf0d4a8, 0xc88a10, 0x28180c],
       ganesha:      [0xd4906a, 0xc01c2c, 0x3a1820],
-      elephantHead: [0xb0bcc8, 0xe0a080, 0x1c1418],  // warmer blue-grey | vivid rose ear | shadow
+      elephantHead: [0xb0bcc8, 0xe0a080, 0x1c1418],
       elephant:     [0x9aaab8, 0xd09070, 0x1c1a18],
       mushaka:      [0x9a6840, 0xf5e5c8, 0x1e100a],
     }[kind];
@@ -303,13 +305,13 @@ export function createWorld(canvas) {
       const front = axis==='z' ? depthValue > -(bb.min.y+bb.max.y)/2 : depthValue > (bb.min.z+bb.max.z)/2;
       let c=colors[0].clone();
       if (kind==='parvati'||kind==='shakti') {
-        // Saree covers hips-to-shoulder, blouse at chest, gold crown zone
-        const hem      = 0.10 + 0.02*Math.cos(signedX*12);
-        const neckline = 0.68 + signedX*0.20;
-        const halfW    = (kind==='parvati') ? 0.24+Math.max(0,0.55-h)*0.48 : 0.14+Math.max(0,0.60-h)*0.32;
-        if (h>hem && h<neckline && x<halfW)          c=colors[1].clone();
-        if (h>0.62 && h<0.82 && x>0.14 && x<0.28)  c=colors[2].clone(); // blouse band
-        if (h>0.88 && x<0.26)                        c=goldColor.clone(); // crown
+        // Saree: hips upward, narrows at shoulders, skin visible on arms/face
+        const hem      = 0.08 + 0.02*Math.cos(signedX*10);
+        const neckline = 0.72 + signedX*0.18;
+        const halfW    = (kind==='parvati') ? 0.26+Math.max(0,0.52-h)*0.46 : 0.15+Math.max(0,0.58-h)*0.30;
+        if (h > hem && h < neckline && x < halfW)     c = colors[1].clone(); // saree
+        if (h > 0.64 && h < 0.80 && x > 0.12 && x < 0.26) c = colors[2].clone(); // blouse/choli
+        if (h > 0.88 && x < 0.24)                     c = goldColor.clone();  // mukuta/crown
       } else if(kind==='elephantHead') {
         // Ear flush: warm rose on wide outer ear, shadow under eye ridge
         const earZone = T.MathUtils.smoothstep(x,0.30,0.46)*(1-T.MathUtils.smoothstep(h,0.60,0.78))*T.MathUtils.smoothstep(h,0.35,0.52);
@@ -325,12 +327,17 @@ export function createWorld(canvas) {
         const shadow = (1-front) ? 0.3 : 0;
         c=colors[0].clone().lerp(colors[1],belly*0.55).lerp(colors[2],shadow);
       } else if(kind==='shiva') {
-        // Dhoti from hips down, dark waistband, gold jata-crown above shoulders
-        const hem = 0.20+0.08*(1-Math.min(1,x/0.22));
-        if (h>hem && h<0.44 && x<0.30)               c=colors[1].clone(); // saffron dhoti
-        if (h>0.88 || (h>0.66&&h<0.88&&x>0.11&&x<0.25)) c=colors[2].clone(); // dark marks
-        if (signedX<-0.38) c=goldColor.clone(); // trishul/weapon side
-        if (h>0.91) c=silverColor.clone(); // top of Jata = silver-white ash
+        // Dhoti: lower body only (h 0.10–0.38), burnt saffron
+        const hem = 0.18 + 0.06*(1-Math.min(1, x/0.20));
+        if (h > hem && h < 0.38 && x < 0.32)          c = colors[1].clone(); // dhoti
+        // Rudraksha / waistband band across mid-torso
+        if (h > 0.36 && h < 0.46 && x < 0.22)        c = colors[2].clone(); // dark waistband
+        // Dark hair on back/sides
+        if (h > 0.80 && x > 0.18)                     c = colors[2].clone(); // hair
+        // Trishul side gold
+        if (signedX < -0.40)                           c = goldColor.clone();
+        // Jata top — silver-ash crown
+        if (h > 0.92)                                  c = silverColor.clone();
       } else {
         // child / headless / ganesha
         const hem = 0.11+0.03*Math.cos(signedX*14);
